@@ -3,173 +3,65 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111827">
-  <meta name="description" content="BSMFTEK 開通網，可建立指定期限授權碼並完成 LINE 官方帳號綁定。">
+  <meta name="theme-color" content="#151922">
+  <meta name="description" content="BSMFTEK 授權碼產生工具">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://unpkg.com; connect-src 'self' https://*.trycloudflare.com; base-uri 'self'; form-action 'self'">
   <title>BSMFTEK 開通網</title>
   <link rel="icon" href="assets/bluestar-logo.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260726-2">
 </head>
 <body>
-  <header class="site-header">
-    <a class="brand" href="#main" aria-label="BSMFTEK 開通首頁">
-      <img src="assets/bluestar-logo.png" alt="BSMFTEK">
-      <span>
-        <strong>BSMFTEK</strong>
-        <small>開通網</small>
-      </span>
-    </a>
-    <span class="official-badge"><i data-lucide="badge-check" aria-hidden="true"></i> 官方開通入口</span>
-  </header>
-
-  <main id="main">
-    <section class="intro" aria-labelledby="page-title">
-      <div class="intro-copy">
-        <p class="eyebrow">BSMFTEK ACCESS</p>
-        <h1 id="page-title">BSMFTEK 開通網<br>授權與 LINE 綁定</h1>
-        <p class="lead">驗證碼由 BSMF 官方提供，10 分鐘內有效且只能使用一次。</p>
-      </div>
-
-      <div class="activation-panel" aria-labelledby="activation-title">
-        <div class="panel-heading">
-          <div>
-            <p class="step-label">STEP 01</p>
-            <h2 id="activation-title">輸入驗證碼</h2>
-          </div>
-          <span class="secure-mark"><i data-lucide="shield-check" aria-hidden="true"></i> 安全驗證</span>
+  <main>
+    <form id="generator-form" class="generator-form" novalidate>
+      <fieldset>
+        <legend>選擇使用期限</legend>
+        <div class="duration-options">
+          <label><input type="radio" name="access-days" value="15" checked><span>15 天</span></label>
+          <label><input type="radio" name="access-days" value="30"><span>30 天</span></label>
+          <label><input type="radio" name="access-days" value="90"><span>90 天</span></label>
+          <label><input type="radio" name="access-days" value="365"><span>365 天</span></label>
+          <label><input type="radio" name="access-days" value="custom"><span>自訂期限</span></label>
         </div>
+      </fieldset>
 
-        <form id="activation-form" novalidate>
-          <label for="activation-code">6 位數字組合</label>
-          <div class="code-field">
-            <input
-              id="activation-code"
-              name="activation-code"
-              type="text"
-              inputmode="numeric"
-              autocomplete="one-time-code"
-              pattern="[0-9]{6}"
-              minlength="6"
-              maxlength="6"
-              placeholder="000000"
-              aria-describedby="code-help activation-status"
-              required
-            >
-            <button id="clear-code" class="icon-button" type="button" title="清除驗證碼" aria-label="清除驗證碼">
-              <i data-lucide="x" aria-hidden="true"></i>
-            </button>
-          </div>
-          <p id="code-help" class="field-help">僅接受 6 位數字，不會儲存在此網站。</p>
+      <label class="field" for="custom-days">
+        <span>自訂天數</span>
+        <input id="custom-days" type="number" inputmode="numeric" min="1" max="3650" placeholder="例如 45" disabled>
+      </label>
 
-          <button id="activate-button" class="primary-button" type="submit">
-            <i data-lucide="message-circle" aria-hidden="true"></i>
-            複製驗證碼並開啟 LINE
-          </button>
-
-          <div id="activation-status" class="status-message" role="status" aria-live="polite"></div>
-        </form>
-
-        <div class="line-account">
-          <span>LINE 官方帳號</span>
-          <strong>BSMFTEK</strong>
-          <code>@379duufl</code>
-        </div>
-      </div>
-    </section>
-
-    <section class="generator" aria-labelledby="generator-title">
-      <div class="section-heading generator-heading">
-        <p class="eyebrow">OWNER CONSOLE</p>
-        <h2 id="generator-title">在開通網取得授權碼</h2>
-        <p>選擇使用期限後產生 6 位數一次性授權碼。授權碼 10 分鐘內有效，客戶綁定後才開始計算使用天數。</p>
-      </div>
-
-      <form id="generator-form" class="generator-form" novalidate>
-        <fieldset>
-          <legend>選擇使用期限</legend>
-          <div class="duration-options">
-            <label><input type="radio" name="access-days" value="15" checked><span>15 天</span></label>
-            <label><input type="radio" name="access-days" value="30"><span>30 天</span></label>
-            <label><input type="radio" name="access-days" value="90"><span>90 天</span></label>
-            <label><input type="radio" name="access-days" value="365"><span>365 天</span></label>
-            <label><input type="radio" name="access-days" value="custom"><span>自訂期限</span></label>
-          </div>
-        </fieldset>
-        <label class="custom-days-row" for="custom-days">
-          自訂天數
-          <input id="custom-days" type="number" inputmode="numeric" min="1" max="3650" placeholder="例如 45" disabled>
-        </label>
-        <label for="customer-label">客戶備註</label>
+      <label class="field" for="customer-label">
+        <span>客戶備註</span>
         <input id="customer-label" type="text" maxlength="80" autocomplete="off" placeholder="例如：王小姐－進階方案" required>
-        <label for="admin-key">管理密碼</label>
+      </label>
+
+      <label class="field" for="admin-key">
+        <span>管理密碼</span>
         <input id="admin-key" type="password" autocomplete="current-password" placeholder="輸入 BSMF 管理密碼" required>
-        <button class="primary-button admin-button" type="submit">
-          <i data-lucide="key-round" aria-hidden="true"></i>
-          產生授權碼
+      </label>
+
+      <button class="primary-button" type="submit">
+        <i data-lucide="key-round" aria-hidden="true"></i>
+        產生授權碼
+      </button>
+
+      <div id="generator-status" class="status-message" role="status" aria-live="polite"></div>
+
+      <div id="generated-code" class="generated-code" hidden>
+        <span>新授權碼</span>
+        <strong></strong>
+        <small></small>
+        <button id="copy-generated-code" class="secondary-button" type="button">
+          <i data-lucide="copy" aria-hidden="true"></i>
+          複製授權碼
         </button>
-        <div id="generator-status" class="status-message" role="status" aria-live="polite"></div>
-        <div id="generated-code" class="generated-code" hidden>
-          <span>新授權碼</span>
-          <strong></strong>
-          <button id="copy-generated-code" class="secondary-button" type="button">
-            <i data-lucide="copy" aria-hidden="true"></i> 複製授權碼
-          </button>
-          <small></small>
-        </div>
-      </form>
-    </section>
-
-    <section class="process" aria-labelledby="process-title">
-      <div class="section-heading">
-        <p class="eyebrow">ACTIVATION FLOW</p>
-        <h2 id="process-title">三步完成開通</h2>
       </div>
-      <ol class="process-list">
-        <li>
-          <span class="process-number">01</span>
-          <div>
-            <h3>取得驗證碼</h3>
-            <p>向 BSMF 官方客服取得一組 6 位數驗證碼。</p>
-          </div>
-        </li>
-        <li>
-          <span class="process-number">02</span>
-          <div>
-            <h3>傳送至 LINE</h3>
-            <p>按上方按鈕複製驗證碼，再貼到 BSMFTEK 對話框傳送。</p>
-          </div>
-        </li>
-        <li>
-          <span class="process-number">03</span>
-          <div>
-            <h3>確認開通</h3>
-            <p>收到綁定成功訊息後，即可開始使用個人服務。</p>
-          </div>
-        </li>
-      </ol>
-    </section>
-
-    <section class="plans" aria-labelledby="plans-title">
-      <div>
-        <p class="eyebrow">ACCESS PERIOD</p>
-        <h2 id="plans-title">支援使用期限</h2>
-      </div>
-      <div class="plan-options" aria-label="支援期限">
-        <span>15 天</span>
-        <span>30 天</span>
-        <span>90 天</span>
-        <span>365 天</span>
-      </div>
-      <p>實際期限由驗證碼決定，綁定成功後會在 LINE 顯示到期時間。</p>
-    </section>
+    </form>
   </main>
 
-  <footer>
-    <p>BSMFTEK LINE 官方服務</p>
-    <a href="https://line.me/R/ti/p/%40379duufl" target="_blank" rel="noopener noreferrer">直接加入 LINE</a>
-  </footer>
-
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=20260726-2" defer></script>
 </body>
 </html>
