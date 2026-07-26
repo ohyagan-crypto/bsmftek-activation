@@ -30,6 +30,40 @@ async function resolveApiBaseUrl() {
   return endpoint.origin;
 }
 
+async function verifyApiBaseUrl(apiBaseUrl) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(`${apiBaseUrl}/health`, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal
+    });
+    if (!response.ok) throw new Error('授權服務目前無法連線。');
+    const result = await response.json();
+    if (result.status !== 'ok' || result.service !== 'line-bsmftek-relay') {
+      throw new Error('授權服務目前無法連線。');
+    }
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function resolveHealthyApiBaseUrl() {
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const apiBaseUrl = await resolveApiBaseUrl();
+      await verifyApiBaseUrl(apiBaseUrl);
+      return apiBaseUrl;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 0) await new Promise((resolve) => window.setTimeout(resolve, 1200));
+    }
+  }
+  throw lastError || new Error('授權服務目前無法連線。');
+}
+
 async function copyText(value) {
   try {
     await navigator.clipboard.writeText(value);
@@ -91,7 +125,7 @@ generatorForm.addEventListener('submit', async (event) => {
   setStatus('正在建立授權碼...', 'working');
 
   try {
-    const apiBaseUrl = await resolveApiBaseUrl();
+    const apiBaseUrl = await resolveHealthyApiBaseUrl();
     const response = await fetch(`${apiBaseUrl}/api/admin/pairing-code`, {
       method: 'POST',
       headers: {
