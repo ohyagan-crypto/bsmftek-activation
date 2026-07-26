@@ -119,6 +119,12 @@ generatorForm.addEventListener('submit', async (event) => {
     generatorStatus.classList.add('error');
     return;
   }
+  if (!/^[\x20-\x7E]+$/.test(adminKey)) {
+    generatorStatus.textContent = '管理密碼請使用英文、數字或半形符號。';
+    generatorStatus.classList.add('error');
+    document.querySelector('#admin-key').focus();
+    return;
+  }
   if (!label) {
     generatorStatus.textContent = '請輸入客戶姓名或備註，方便後續管理。';
     generatorStatus.classList.add('error');
@@ -147,7 +153,10 @@ generatorForm.addEventListener('submit', async (event) => {
     document.querySelector('#admin-key').value = '';
     renderIcons();
   } catch (error) {
-    generatorStatus.textContent = error.message || '服務暫時無法使用。';
+    const knownMessage = /管理密碼|授權服務|授權碼/.test(error.message || '')
+      ? error.message
+      : '授權服務暫時無法使用，請稍後再試。';
+    generatorStatus.textContent = knownMessage;
     generatorStatus.classList.add('error');
   } finally {
     submitButton.disabled = false;
