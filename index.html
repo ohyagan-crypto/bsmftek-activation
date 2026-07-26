@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111827">
   <meta name="description" content="BSMFTEK LINE 官方帳號驗證碼開通入口。">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://unpkg.com; connect-src 'self'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://unpkg.com; connect-src 'self' https://*.trycloudflare.com; base-uri 'self'; form-action 'self'">
   <title>BSMFTEK 驗證碼開通</title>
   <link rel="icon" href="assets/bluestar-logo.png">
   <link rel="stylesheet" href="styles.css">
@@ -75,6 +75,48 @@
           <code>@379duufl</code>
         </div>
       </div>
+    </section>
+
+    <section class="generator" aria-labelledby="generator-title">
+      <div class="section-heading generator-heading">
+        <p class="eyebrow">OWNER CONSOLE</p>
+        <h2 id="generator-title">建立客戶授權碼</h2>
+        <p>選擇使用期限後產生 6 位數一次性授權碼。授權碼 10 分鐘內有效，客戶綁定後才開始計算使用天數。</p>
+      </div>
+
+      <form id="generator-form" class="generator-form" novalidate>
+        <fieldset>
+          <legend>選擇使用期限</legend>
+          <div class="duration-options">
+            <label><input type="radio" name="access-days" value="15" checked><span>15 天</span></label>
+            <label><input type="radio" name="access-days" value="30"><span>30 天</span></label>
+            <label><input type="radio" name="access-days" value="90"><span>90 天</span></label>
+            <label><input type="radio" name="access-days" value="365"><span>365 天</span></label>
+            <label><input type="radio" name="access-days" value="custom"><span>自訂期限</span></label>
+          </div>
+        </fieldset>
+        <label class="custom-days-row" for="custom-days">
+          自訂天數
+          <input id="custom-days" type="number" inputmode="numeric" min="1" max="3650" placeholder="例如 45" disabled>
+        </label>
+        <label for="customer-label">客戶備註</label>
+        <input id="customer-label" type="text" maxlength="80" placeholder="例如：王小姐－進階方案" required>
+        <label for="admin-key">管理密碼</label>
+        <input id="admin-key" type="password" autocomplete="current-password" placeholder="輸入 BSMF 管理密碼" required>
+        <button class="primary-button admin-button" type="submit">
+          <i data-lucide="key-round" aria-hidden="true"></i>
+          產生授權碼
+        </button>
+        <div id="generator-status" class="status-message" role="status" aria-live="polite"></div>
+        <div id="generated-code" class="generated-code" hidden>
+          <span>新授權碼</span>
+          <strong></strong>
+          <button id="copy-generated-code" class="secondary-button" type="button">
+            <i data-lucide="copy" aria-hidden="true"></i> 複製授權碼
+          </button>
+          <small></small>
+        </div>
+      </form>
     </section>
 
     <section class="process" aria-labelledby="process-title">

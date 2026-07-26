@@ -4,6 +4,12 @@ const form = document.querySelector('#activation-form');
 const codeInput = document.querySelector('#activation-code');
 const clearButton = document.querySelector('#clear-code');
 const statusMessage = document.querySelector('#activation-status');
+const API_BASE_URL = 'https://personals-diameter-fair-sunglasses.trycloudflare.com';
+const generatorForm = document.querySelector('#generator-form');
+const generatorStatus = document.querySelector('#generator-status');
+const generatedCode = document.querySelector('#generated-code');
+const customDays = document.querySelector('#custom-days');
+const copyGeneratedCode = document.querySelector('#copy-generated-code');
 
 function renderIcons() {
   if (window.lucide) window.lucide.createIcons();
@@ -84,3 +90,73 @@ form.addEventListener('submit', async (event) => {
 });
 
 window.addEventListener('load', renderIcons);
+
+document.querySelectorAll('input[name="access-days"]').forEach((input) => {
+  input.addEventListener('change', () => {
+    const custom = input.value === 'custom' && input.checked;
+    customDays.disabled = !custom;
+    if (custom) customDays.focus();
+  });
+});
+
+generatorForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  generatorStatus.textContent = '';
+  generatorStatus.classList.remove('error');
+  generatedCode.hidden = true;
+
+  const selected = generatorForm.querySelector('input[name="access-days"]:checked')?.value;
+  const accessDays = selected === 'custom' ? Number(customDays.value) : Number(selected);
+  const adminKey = document.querySelector('#admin-key').value;
+  const label = document.querySelector('#customer-label').value.trim();
+  if (!Number.isInteger(accessDays) || accessDays < 1 || accessDays > 3650) {
+    generatorStatus.textContent = '請輸入 1 至 3650 天的有效期限。';
+    generatorStatus.classList.add('error');
+    return;
+  }
+  if (!adminKey) {
+    generatorStatus.textContent = '請輸入管理密碼。';
+    generatorStatus.classList.add('error');
+    return;
+  }
+  if (!label) {
+    generatorStatus.textContent = '請輸入客戶姓名或備註，方便後續管理。';
+    generatorStatus.classList.add('error');
+    document.querySelector('#customer-label').focus();
+    return;
+  }
+
+  const submitButton = generatorForm.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  generatorStatus.textContent = '正在建立授權碼...';
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/pairing-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+      body: JSON.stringify({ accessDays, label })
+    });
+    const contentType = response.headers.get('content-type') || '';
+    const result = contentType.includes('application/json')
+      ? await response.json()
+      : { ok: false, error: '授權服務暫時無法連線。' };
+    if (!response.ok || !result.ok) throw new Error(result.error || '無法產生授權碼');
+    generatedCode.querySelector('strong').textContent = result.code;
+    generatedCode.querySelector('small').textContent = `${result.accessDays} 天使用權，授權碼將於 10 分鐘後失效。`;
+    generatedCode.hidden = false;
+    generatorStatus.textContent = '授權碼已建立，請私下提供給指定客戶。';
+    document.querySelector('#admin-key').value = '';
+    renderIcons();
+  } catch (error) {
+    generatorStatus.textContent = error.message || '服務暫時無法使用。';
+    generatorStatus.classList.add('error');
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
+copyGeneratedCode.addEventListener('click', async () => {
+  const code = generatedCode.querySelector('strong').textContent;
+  const copied = await copyCode(code);
+  generatorStatus.textContent = copied ? '授權碼已複製。' : '無法自動複製，請長按授權碼複製。';
+  generatorStatus.classList.toggle('error', !copied);
+});
