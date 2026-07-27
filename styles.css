@@ -23,6 +23,10 @@ input {
   letter-spacing: 0;
 }
 
+small {
+  letter-spacing: 0;
+}
+
 button {
   border: 0;
 }
@@ -47,6 +51,10 @@ fieldset {
   margin: 0 0 28px;
   padding: 0;
   border: 0;
+}
+
+.feature-access {
+  margin-top: 28px;
 }
 
 legend,
@@ -109,6 +117,58 @@ legend,
   margin-top: 24px;
 }
 
+.field-help {
+  display: block;
+  margin-top: 9px;
+  color: #9fa6b0;
+  line-height: 1.5;
+}
+
+.feature-options {
+  display: grid;
+  gap: 10px;
+}
+
+.feature-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  min-height: 72px;
+  padding: 14px 16px;
+  border: 1px solid #4f5660;
+  border-radius: 8px;
+  background: #181a1d;
+  cursor: pointer;
+}
+
+.feature-option strong,
+.feature-option small {
+  display: block;
+}
+
+.feature-option strong {
+  color: #f7f8fa;
+}
+
+.feature-option small {
+  margin-top: 5px;
+  color: #9fa6b0;
+  line-height: 1.4;
+}
+
+.feature-option input {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: #4c7fff;
+}
+
+.feature-option:has(input:checked) {
+  border-color: #4c7fff;
+  background: #202838;
+}
+
 .field input {
   width: 100%;
   height: 64px;
@@ -132,6 +192,59 @@ legend,
 .field input:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.credential-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  margin-top: 10px;
+}
+
+.remember-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #d7dbe1;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.remember-option input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: #4c7fff;
+}
+
+.icon-button {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 1px solid #555c66;
+  border-radius: 8px;
+  background: #1a1c1d;
+  color: #d7dbe1;
+  cursor: pointer;
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  border-color: #ff7777;
+  color: #ff9292;
+}
+
+.icon-button[hidden] {
+  display: none;
+}
+
+.icon-button svg {
+  width: 20px;
+  height: 20px;
 }
 
 .primary-button,
@@ -257,6 +370,10 @@ legend,
 
   .field input {
     height: 58px;
+  }
+
+  .feature-option {
+    min-height: 68px;
   }
 
   .generated-code {

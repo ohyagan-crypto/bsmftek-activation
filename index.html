@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://unpkg.com; connect-src 'self' https://*.trycloudflare.com; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' https://*.trycloudflare.com; base-uri 'self'; form-action 'self'">
   <title>BSMFTEK 開通網</title>
   <link rel="icon" href="assets/bluestar-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20260726-2">
+  <link rel="stylesheet" href="styles.css?v=20260727-2">
 </head>
 <body>
   <main>
@@ -37,10 +37,45 @@
         <input id="customer-label" type="text" maxlength="80" autocomplete="off" placeholder="例如：王小姐－進階方案" required>
       </label>
 
+      <fieldset class="feature-access">
+        <legend>功能權限</legend>
+        <div class="feature-options">
+          <label class="feature-option">
+            <span><strong>WBS 網站製作</strong><small>建立、修改及部署網站</small></span>
+            <input id="feature-wbs" type="checkbox">
+          </label>
+          <label class="feature-option">
+            <span><strong>GitHub 部署</strong><small>儲存庫與公開網頁部署</small></span>
+            <input id="feature-github" type="checkbox">
+          </label>
+          <label class="feature-option">
+            <span><strong>SD 影片</strong><small>SDMINI 影片製作權限</small></span>
+            <input id="feature-sd-video" type="checkbox">
+          </label>
+        </div>
+      </fieldset>
+
+      <label class="field" for="sd-credits">
+        <span>SD 影片積分</span>
+        <input id="sd-credits" type="number" inputmode="numeric" min="0" max="100000" value="0" disabled>
+        <small class="field-help">影片成功交付後，每筆扣除 1 點。</small>
+      </label>
+
       <label class="field" for="admin-key">
         <span>管理密碼</span>
-        <input id="admin-key" type="password" autocomplete="current-password" placeholder="輸入 BSMF 管理密碼" required>
+        <input type="text" name="username" autocomplete="username" value="BSMFTEK 管理員" hidden>
+        <input id="admin-key" name="password" type="password" autocomplete="current-password" placeholder="輸入 BSMF 管理密碼" required>
       </label>
+
+      <div class="credential-actions">
+        <label class="remember-option">
+          <input id="remember-admin-key" type="checkbox" checked>
+          <span>記住管理密碼</span>
+        </label>
+        <button id="forget-admin-key" class="icon-button" type="button" title="清除已記住的管理密碼" aria-label="清除已記住的管理密碼" hidden>
+          <i data-lucide="trash-2" aria-hidden="true"></i>
+        </button>
+      </div>
 
       <button class="primary-button" type="submit">
         <i data-lucide="key-round" aria-hidden="true"></i>
@@ -61,7 +96,7 @@
     </form>
   </main>
 
-  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
-  <script src="app.js?v=20260726-2" defer></script>
+  <script src="assets/lucide.min.js?v=0.468.0" defer></script>
+  <script src="app.js?v=20260727-2" defer></script>
 </body>
 </html>
