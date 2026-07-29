@@ -9,6 +9,8 @@ const featureWbs = document.querySelector('#feature-wbs');
 const featureGithub = document.querySelector('#feature-github');
 const featureSdVideo = document.querySelector('#feature-sd-video');
 const sdCredits = document.querySelector('#sd-credits');
+const sdCreditPreview = document.querySelector('#sd-credit-preview');
+const customerLabel = document.querySelector('#customer-label');
 const adminKeyInput = document.querySelector('#admin-key');
 const rememberAdminKey = document.querySelector('#remember-admin-key');
 const forgetAdminKey = document.querySelector('#forget-admin-key');
@@ -18,6 +20,40 @@ const CREDENTIAL_STORE = 'encrypted-settings';
 const CREDENTIAL_KEY_RECORD = 'admin-key-encryption-key';
 const CREDENTIAL_VALUE_RECORD = 'admin-key-ciphertext';
 let credentialDatabasePromise;
+
+const SD_CREDITS_PER_SECOND = 9;
+const SD_MIN_DURATION_SECONDS = 5;
+const SD_MAX_DURATION_SECONDS = 15;
+const MIN_SD_RECHARGE_TWD = 36;
+
+function updateSdCreditPreview() {
+  const amount = Math.max(0, Number(sdCredits.value || 0));
+  const seconds = Math.min(SD_MAX_DURATION_SECONDS, Math.floor(amount / SD_CREDITS_PER_SECOND));
+  const usableText = seconds >= SD_MIN_DURATION_SECONDS
+    ? `目前可製作最長 ${seconds} 秒影片。`
+    : `製作 ${SD_MIN_DURATION_SECONDS} 秒影片需 ${SD_MIN_DURATION_SECONDS * SD_CREDITS_PER_SECOND} 積分。`;
+  sdCreditPreview.textContent = `1 元 = 1 積分；單次最低儲值 ${MIN_SD_RECHARGE_TWD} 元。${usableText}`;
+}
+
+function syncCustomDaysState(focus = false) {
+  const selected = generatorForm.querySelector('input[name="access-days"]:checked')?.value;
+  const custom = selected === 'custom';
+  customDays.disabled = !custom;
+  if (custom && focus) customDays.focus();
+}
+
+function syncSdRechargeState(focus = false) {
+  sdCredits.disabled = !featureSdVideo.checked;
+  if (featureSdVideo.checked) {
+    if (Number(sdCredits.value) < MIN_SD_RECHARGE_TWD) {
+      sdCredits.value = String(SD_MIN_DURATION_SECONDS * SD_CREDITS_PER_SECOND);
+    }
+    if (focus) sdCredits.focus();
+  } else {
+    sdCredits.value = '0';
+  }
+  updateSdCreditPreview();
+}
 
 function renderIcons() {
   if (window.lucide) window.lucide.createIcons();
@@ -195,22 +231,13 @@ async function copyText(value) {
 }
 
 document.querySelectorAll('input[name="access-days"]').forEach((input) => {
-  input.addEventListener('change', () => {
-    const custom = input.value === 'custom' && input.checked;
-    customDays.disabled = !custom;
-    if (custom) customDays.focus();
-  });
+  input.addEventListener('change', () => syncCustomDaysState(true));
 });
 
 featureSdVideo.addEventListener('change', () => {
-  sdCredits.disabled = !featureSdVideo.checked;
-  if (featureSdVideo.checked) {
-    if (Number(sdCredits.value) < 1) sdCredits.value = '1';
-    sdCredits.focus();
-  } else {
-    sdCredits.value = '0';
-  }
+  syncSdRechargeState(true);
 });
+sdCredits.addEventListener('input', updateSdCreditPreview);
 
 rememberAdminKey.addEventListener('change', async () => {
   if (rememberAdminKey.checked) return;
@@ -243,7 +270,7 @@ generatorForm.addEventListener('submit', async (event) => {
   const selected = generatorForm.querySelector('input[name="access-days"]:checked')?.value;
   const accessDays = selected === 'custom' ? Number(customDays.value) : Number(selected);
   const adminKey = adminKeyInput.value;
-  const label = document.querySelector('#customer-label').value.trim();
+  const label = customerLabel.value.trim();
   const featureAccess = {
     wbs: featureWbs.checked,
     github: featureGithub.checked,
@@ -255,15 +282,10 @@ generatorForm.addEventListener('submit', async (event) => {
     setStatus('請輸入 1 至 3650 天的有效期限。', 'error');
     return;
   }
-  if (!label) {
-    setStatus('請輸入客戶姓名或備註。', 'error');
-    document.querySelector('#customer-label').focus();
-    return;
-  }
   if (!Number.isInteger(featureAccess.sdCredits)
-    || featureAccess.sdCredits < (featureAccess.sdVideo ? 1 : 0)
+    || featureAccess.sdCredits < (featureAccess.sdVideo ? MIN_SD_RECHARGE_TWD : 0)
     || featureAccess.sdCredits > 100000) {
-    setStatus('SD 影片開通時，請輸入 1 至 100000 點積分。', 'error');
+    setStatus(`SD 儲值單次最低 ${MIN_SD_RECHARGE_TWD} 元，上限 100000 元；1 元等於 1 積分。`, 'error');
     sdCredits.focus();
     return;
   }
@@ -302,7 +324,7 @@ generatorForm.addEventListener('submit', async (event) => {
     const granted = [];
     if (result.featureAccess?.wbs) granted.push('WBS');
     if (result.featureAccess?.github) granted.push('GitHub');
-    if (result.featureAccess?.sdVideo) granted.push(`SD 影片 ${result.featureAccess.sdCredits} 點`);
+    if (result.featureAccess?.sdVideo) granted.push(`SD 影片儲值 ${result.featureAccess.sdCredits} 積分（NT$${result.featureAccess.sdCredits}）`);
     generatedCode.querySelector('small').textContent = `${result.accessDays} 天使用權；${granted.length ? `已開通：${granted.join('、')}` : '未開通進階功能'}。授權碼將於 10 分鐘後失效。`;
     generatedCode.hidden = false;
     let credentialSaved = false;
@@ -332,7 +354,7 @@ generatorForm.addEventListener('submit', async (event) => {
     renderIcons();
   } catch (error) {
     const message = String(error.message || '');
-    const knownMessage = /管理密碼|授權服務|授權碼|最新/.test(message)
+    const knownMessage = /管理密碼|授權服務|授權碼|最新|SD|儲值|積分/.test(message)
       ? message
       : '授權服務連線失敗，請重新整理後再試。';
     setStatus(knownMessage, 'error');
@@ -349,5 +371,12 @@ copyGeneratedCode.addEventListener('click', async () => {
 
 window.addEventListener('load', () => {
   renderIcons();
+  syncCustomDaysState();
+  syncSdRechargeState();
   restoreRememberedAdminKey();
+});
+
+window.addEventListener('pageshow', () => {
+  syncCustomDaysState();
+  syncSdRechargeState();
 });
