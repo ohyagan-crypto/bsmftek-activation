@@ -49,7 +49,15 @@ const APP_LINKS = {
   pxPayPlus: { name: '全支付', web: 'https://www.pxpayplus.com/' },
   easyWallet: { name: '悠遊付', web: 'https://easywallet.easycard.com.tw/', ios: 'easywallet://', android: 'tw.com.easycard.wallet' },
   invoiceIos: { name: '財政部統一發票兌獎', web: 'https://apps.apple.com/tw/app/id1445981329' },
-  invoiceAndroid: { name: '財政部統一發票兌獎', web: 'https://play.google.com/store/apps/details?id=tw.gov.invoice&hl=zh_TW', android: 'tw.gov.invoice' }
+  invoiceAndroid: { name: '財政部統一發票兌獎', web: 'https://play.google.com/store/apps/details?id=tw.gov.invoice&hl=zh_TW', android: 'tw.gov.invoice' },
+  eBill: { name: '全國繳費網', web: 'https://ebill.ba.org.tw/' },
+  taiwanPay: { name: '台灣 Pay', web: 'https://www.taiwanpay.com.tw/' },
+  ibon: { name: '7-ELEVEN ibon', web: 'https://www.ibon.com.tw/' },
+  familyMart: { name: '全家便利商店', web: 'https://www.family.com.tw/Marketing/' },
+  ezWayIos: { name: 'EZ WAY 易利委', web: 'https://apps.apple.com/tw/app/id1173371471' },
+  ezWayAndroid: { name: 'EZ WAY 易利委', web: 'https://play.google.com/store/apps/details?id=com.tradevan.android.forms&hl=zh_TW', android: 'com.tradevan.android.forms' },
+  cwa: { name: '中央氣象署', web: 'https://www.cwa.gov.tw/V8/C/' },
+  windy: { name: 'Windy', web: 'https://www.windy.com/', ios: 'windy://', android: 'com.windyty.android' }
 };
 
 const params = new URLSearchParams(window.location.search);
