@@ -54,7 +54,7 @@ const APP_LINKS = {
   taiwanPay: { name: '台灣 Pay', web: 'https://www.taiwanpay.com.tw/' },
   ibon: { name: '7-ELEVEN ibon', web: 'https://www.ibon.com.tw/' },
   familyMart: { name: '全家便利商店', web: 'https://www.family.com.tw/Marketing/' },
-  ezWayIos: { name: 'EZ WAY 易利委', web: 'https://apps.apple.com/tw/app/id1173371471' },
+  ezWayIos: { name: 'EZ WAY 易利委', web: 'https://apps.apple.com/tw/app/ez-way-%E6%98%93%E5%88%A9%E5%A7%94/id1127781971' },
   ezWayAndroid: { name: 'EZ WAY 易利委', web: 'https://play.google.com/store/apps/details?id=com.tradevan.android.forms&hl=zh_TW', android: 'com.tradevan.android.forms' },
   cwa: { name: '中央氣象署', web: 'https://www.cwa.gov.tw/V8/C/' },
   windy: { name: 'Windy', web: 'https://www.windy.com/', ios: 'windy://', android: 'com.windyty.android' }
