@@ -1,8 +1,8 @@
-const CACHE_NAME = 'shamie-app-20260731-1';
+const CACHE_NAME = 'shamie-app-20260731-2';
 const APP_SHELL = [
   './install-app.html',
-  './install-app.css?v=20260731-1',
-  './install-app.js?v=20260731-1',
+  './install-app.css?v=20260731-2',
+  './install-app.js?v=20260731-2',
   './manifest.webmanifest',
   './assets/bluestar-logo.png',
   './assets/shamie-app-192.png',

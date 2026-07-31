@@ -1,5 +1,6 @@
 const installButton = document.querySelector('#install-button');
 const installLabel = document.querySelector('#install-label');
+const openShamie = document.querySelector('#open-shamie');
 const pageTitle = document.querySelector('#page-title');
 const status = document.querySelector('#status');
 const deviceLabel = document.querySelector('#device-label');
@@ -16,6 +17,9 @@ const isAndroid = /Android/i.test(userAgent);
 const isLineBrowser = /Line\//i.test(userAgent);
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 let deferredInstallPrompt = null;
+
+const SHAMIE_LINE_URL = 'https://line.me/R/ti/p/%40379duufl';
+openShamie.href = SHAMIE_LINE_URL;
 
 function deviceName() {
   if (isIos) return 'iPhone／iPad';
