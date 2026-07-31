@@ -1,0 +1,201 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", "Noto Sans TC", system-ui, sans-serif;
+  color: #18242b;
+  background: #f4f7f8;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { min-height: 100%; }
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #f4f7f8;
+}
+
+.site-header {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 12px max(20px, env(safe-area-inset-left));
+  border-bottom: 1px solid #d9e1e4;
+  background: #ffffff;
+}
+
+.site-header img {
+  width: 112px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.install-shell {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+}
+
+.install-tool {
+  width: min(100%, 480px);
+  padding: 36px;
+  border: 1px solid #d4dee2;
+  border-radius: 8px;
+  text-align: center;
+  background: #ffffff;
+  box-shadow: 0 18px 50px rgba(24, 36, 43, 0.08);
+}
+
+.app-icon {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 22px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 22px;
+  color: #ffffff;
+  background: #0f766e;
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.24);
+}
+
+.app-icon span {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.app-icon i {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  color: #f7c948;
+  font-size: 16px;
+  font-style: normal;
+}
+
+.device-label {
+  margin: 0 0 8px;
+  color: #0f766e;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.status {
+  min-height: 52px;
+  margin: 14px 0 24px;
+  color: #5b6970;
+  line-height: 1.65;
+}
+
+.actions { display: grid; gap: 12px; }
+
+.primary-button,
+.secondary-button,
+.notification-button,
+.browser-note a {
+  min-height: 50px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary-button {
+  border: 1px solid #0f766e;
+  color: #ffffff;
+  background: #0f766e;
+}
+
+.primary-button:disabled {
+  border-color: #a8b7bd;
+  color: #ffffff;
+  background: #a8b7bd;
+  cursor: wait;
+}
+
+.secondary-button,
+.notification-button {
+  border: 1px solid #c7d2d7;
+  color: #25343b;
+  background: #ffffff;
+}
+
+.is-installed #open-shamie {
+  border-color: #0f766e;
+  color: #ffffff;
+  background: #0f766e;
+}
+
+.install-steps,
+.browser-note,
+.notification-area {
+  margin: 22px 0 0;
+  padding: 20px;
+  border-top: 1px solid #dfe6e9;
+  text-align: left;
+}
+
+.install-steps {
+  padding-left: 42px;
+  line-height: 1.8;
+}
+
+.browser-note strong { display: block; margin-bottom: 6px; }
+.browser-note p { margin: 0 0 14px; color: #5b6970; line-height: 1.6; }
+.browser-note a { min-height: 44px; border: 1px solid #0f766e; color: #0f766e; }
+
+.notification-area { text-align: center; }
+.notification-button { width: 100%; }
+.notification-area p { min-height: 24px; margin: 10px 0 0; color: #5b6970; }
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #f4b942;
+  outline-offset: 3px;
+}
+
+footer {
+  padding: 18px max(20px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom));
+  color: #6a777d;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .site-header { justify-content: center; }
+  .install-shell {
+    place-items: start center;
+    padding: 48px 14px 24px;
+  }
+  .install-tool { padding: 28px 20px; }
+  h1 { font-size: 28px; }
+}
+
+@media (display-mode: standalone) {
+  .site-header { padding-top: calc(12px + env(safe-area-inset-top)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; }
+}

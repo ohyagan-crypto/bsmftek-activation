@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="安裝蝦咩 APP，快速開啟藍星科技生活服務。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'none'">
+  <title>安裝蝦咩 APP｜藍星科技</title>
+  <link rel="icon" href="assets/shamie-app-192.png">
+  <link rel="apple-touch-icon" href="assets/shamie-app-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="install-app.css?v=20260731-1">
+</head>
+<body>
+  <header class="site-header">
+    <img src="assets/bluestar-logo.png" alt="藍星科技">
+  </header>
+
+  <main class="install-shell">
+    <section class="install-tool" aria-labelledby="page-title">
+      <div class="app-icon" aria-hidden="true"><span>蝦</span><i>★</i></div>
+      <p id="device-label" class="device-label">正在辨識裝置</p>
+      <h1 id="page-title">安裝蝦咩 APP</h1>
+      <p id="status" class="status" role="status" aria-live="polite">準備安裝...</p>
+
+      <div class="actions">
+        <button id="install-button" class="primary-button" type="button" disabled>
+          <span aria-hidden="true">↓</span>
+          <span id="install-label">準備安裝</span>
+        </button>
+        <a id="open-shamie" class="secondary-button" href="https://lin.ee/FmJ2Ytq">
+          <span aria-hidden="true">↗</span>
+          直接開啟蝦咩
+        </a>
+      </div>
+
+      <ol id="ios-steps" class="install-steps" hidden>
+        <li>點瀏覽器下方的分享按鈕</li>
+        <li>選擇「加入主畫面」</li>
+        <li>點右上角「新增」</li>
+      </ol>
+
+      <div id="in-app-steps" class="browser-note" hidden>
+        <strong>請使用手機瀏覽器安裝</strong>
+        <p>點右上角選單，再選擇「使用預設瀏覽器開啟」。</p>
+        <a id="open-browser" href="install-app.html">用瀏覽器開啟</a>
+      </div>
+
+      <div id="notification-area" class="notification-area" hidden>
+        <button id="notification-button" class="notification-button" type="button">
+          <span aria-hidden="true">🔔</span>
+          開啟即時通知
+        </button>
+        <p id="notification-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>蝦咩｜藍星科技</footer>
+  <script src="install-app.js?v=20260731-1" defer></script>
+</body>
+</html>
