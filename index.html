@@ -17,24 +17,16 @@
   <main>
     <form id="generator-form" class="generator-form" novalidate>
       <fieldset>
-        <legend>開通類型</legend>
-        <div class="duration-options">
-          <label><input type="radio" name="claim-policy" value="first_claim" checked><span>首次領取</span></label>
-          <label><input type="radio" name="claim-policy" value="renewal"><span>續約／加購</span></label>
-        </div>
-        <small class="field-help">首次領取會鎖定 LINE 帳號，同一帳號永久只能領取一次。</small>
-      </fieldset>
-
-      <fieldset>
         <legend>選擇使用期限</legend>
         <div class="duration-options">
-          <label><input type="radio" name="access-days" value="15" checked><span>15 天</span></label>
-          <label><input type="radio" name="access-days" value="30"><span>30 天</span></label>
+          <label><input type="radio" name="access-days" value="15"><span>15 天</span></label>
+          <label><input type="radio" name="access-days" value="30" checked><span>30 天</span></label>
           <label><input type="radio" name="access-days" value="90"><span>90 天</span></label>
           <label><input type="radio" name="access-days" value="365"><span>365 天</span></label>
           <label><input type="radio" name="access-days" value="custom"><span>自訂期限</span></label>
         </div>
       </fieldset>
+      <small class="field-help">同一 LINE 帳號自成功開通日起，30 天內只能開通一次；每組授權碼只能綁定一個帳號。</small>
 
       <label class="field" for="custom-days">
         <span>自訂天數</span>
@@ -42,7 +34,7 @@
       </label>
 
       <label class="field" for="customer-label">
-        <span>客戶備註（續約／加購必填）</span>
+        <span>客戶備註（選填）</span>
         <input id="customer-label" type="text" maxlength="80" autocomplete="off" placeholder="例如：王小姐－進階方案">
       </label>
 
@@ -106,6 +98,6 @@
   </main>
 
   <script src="assets/lucide.min.js?v=0.468.0" defer></script>
-  <script src="app.js?v=20260803-1" defer></script>
+  <script src="app.js?v=20260803-2" defer></script>
 </body>
 </html>
