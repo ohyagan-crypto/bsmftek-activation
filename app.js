@@ -268,6 +268,7 @@ generatorForm.addEventListener('submit', async (event) => {
   generatedCode.hidden = true;
 
   const selected = generatorForm.querySelector('input[name="access-days"]:checked')?.value;
+  const claimPolicy = generatorForm.querySelector('input[name="claim-policy"]:checked')?.value || 'first_claim';
   const accessDays = selected === 'custom' ? Number(customDays.value) : Number(selected);
   const adminKey = adminKeyInput.value;
   const label = customerLabel.value.trim();
@@ -294,6 +295,16 @@ generatorForm.addEventListener('submit', async (event) => {
     adminKeyInput.focus();
     return;
   }
+  if (claimPolicy === 'renewal' && !label) {
+    setStatus('續約或加購必須填寫客戶備註，避免誤發可重複領取的授權碼。', 'error');
+    customerLabel.focus();
+    return;
+  }
+  if (claimPolicy === 'renewal'
+    && !window.confirm(`請確認：這是既有客戶「${label}」的續約或加購，將允許已領取過的 LINE 帳號再次兌換。`)) {
+    setStatus('已取消建立續約／加購授權碼。');
+    return;
+  }
   if (!/^[\x20-\x7E]+$/.test(adminKey)) {
     setStatus('管理密碼請使用英文、數字或半形符號。', 'error');
     adminKeyInput.focus();
@@ -312,7 +323,7 @@ generatorForm.addEventListener('submit', async (event) => {
         'Content-Type': 'application/json',
         'X-Admin-Key': adminKey
       },
-      body: JSON.stringify({ accessDays, label, featureAccess })
+      body: JSON.stringify({ accessDays, label, featureAccess, claimPolicy })
     });
     const contentType = response.headers.get('content-type') || '';
     const result = contentType.includes('application/json')
@@ -325,7 +336,10 @@ generatorForm.addEventListener('submit', async (event) => {
     if (result.featureAccess?.wbs) granted.push('WBS');
     if (result.featureAccess?.github) granted.push('GitHub');
     if (result.featureAccess?.sdVideo) granted.push(`SD 影片儲值 ${result.featureAccess.sdCredits} 積分（NT$${result.featureAccess.sdCredits}）`);
-    generatedCode.querySelector('small').textContent = `${result.accessDays} 天使用權；${granted.length ? `已開通：${granted.join('、')}` : '未開通進階功能'}。授權碼將於 10 分鐘後失效。`;
+    const policyText = result.claimPolicy === 'renewal'
+      ? '續約／加購碼，可供既有帳號使用'
+      : '首次領取碼，同一 LINE 帳號限領一次';
+    generatedCode.querySelector('small').textContent = `${policyText}；${result.accessDays} 天使用權；${granted.length ? `已開通：${granted.join('、')}` : '未開通進階功能'}。授權碼將於 10 分鐘後失效。`;
     generatedCode.hidden = false;
     let credentialSaved = false;
     if (rememberAdminKey.checked) {
