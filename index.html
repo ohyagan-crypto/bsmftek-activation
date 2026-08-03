@@ -11,7 +11,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' https://*.trycloudflare.com; base-uri 'self'; form-action 'self'">
   <title>藍星科技開通網</title>
   <link rel="icon" href="assets/bluestar-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20260803-1">
+  <link rel="stylesheet" href="styles.css?v=20260803-2">
 </head>
 <body>
   <main>
@@ -26,7 +26,7 @@
           <label><input type="radio" name="access-days" value="custom"><span>自訂期限</span></label>
         </div>
       </fieldset>
-      <small class="field-help">同一 LINE 帳號自成功開通日起，30 天內只能開通一次；每組授權碼只能綁定一個帳號。</small>
+      <small class="field-help">授權碼永久有效，第一次成功使用後立即失效；同一 LINE 帳號自成功開通日起 30 天內只能開通一次。</small>
 
       <label class="field" for="custom-days">
         <span>自訂天數</span>
@@ -95,9 +95,23 @@
         </button>
       </div>
     </form>
+    <section class="status-panel" aria-labelledby="status-panel-title">
+      <div class="status-panel-heading">
+        <div>
+          <h2 id="status-panel-title">開通狀態查詢</h2>
+          <p>查看授權碼是否已使用，以及已綁定的 LINE 帳號。</p>
+        </div>
+        <button id="refresh-pairing-status" class="secondary-button status-refresh" type="button">
+          <i data-lucide="refresh-cw" aria-hidden="true"></i>
+          查詢
+        </button>
+      </div>
+      <div id="pairing-status-message" class="status-message" role="status" aria-live="polite"></div>
+      <div id="pairing-status-content" class="status-content" hidden></div>
+    </section>
   </main>
 
   <script src="assets/lucide.min.js?v=0.468.0" defer></script>
-  <script src="app.js?v=20260803-2" defer></script>
+  <script src="app.js?v=20260803-3" defer></script>
 </body>
 </html>

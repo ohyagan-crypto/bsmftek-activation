@@ -14,6 +14,9 @@ const customerLabel = document.querySelector('#customer-label');
 const adminKeyInput = document.querySelector('#admin-key');
 const rememberAdminKey = document.querySelector('#remember-admin-key');
 const forgetAdminKey = document.querySelector('#forget-admin-key');
+const refreshPairingStatusButton = document.querySelector('#refresh-pairing-status');
+const pairingStatusMessage = document.querySelector('#pairing-status-message');
+const pairingStatusContent = document.querySelector('#pairing-status-content');
 
 const CREDENTIAL_DATABASE = 'bsmftek-activation';
 const CREDENTIAL_STORE = 'encrypted-settings';
@@ -212,6 +215,162 @@ async function resolveHealthyApiBaseUrl() {
   throw lastError || new Error('授權服務目前無法連線。');
 }
 
+function setPairingStatusMessage(message, type = '') {
+  pairingStatusMessage.textContent = message;
+  pairingStatusMessage.className = `status-message${type ? ` ${type}` : ''}`;
+}
+
+function formatStatusDate(value, emptyText = '未記錄') {
+  if (!value) return emptyText;
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).format(new Date(value));
+}
+
+function statusLabel(status) {
+  return {
+    available: '可使用',
+    reserved: '已保留待確認',
+    used: '已使用',
+    expired: '已過期',
+    active: '使用中',
+    revoked: '已停用'
+  }[status] || status || '未設定';
+}
+
+function appendStatusCell(row, value, code = false) {
+  const cell = document.createElement('td');
+  if (code) {
+    const text = document.createElement('code');
+    text.textContent = String(value || '');
+    cell.appendChild(text);
+  } else {
+    cell.textContent = String(value || '');
+  }
+  row.appendChild(cell);
+}
+
+function renderStatusTable(title, columns, rows, emptyText) {
+  const group = document.createElement('section');
+  group.className = 'status-group';
+  const heading = document.createElement('h3');
+  heading.textContent = title;
+  group.appendChild(heading);
+  if (!rows.length) {
+    const empty = document.createElement('p');
+    empty.className = 'status-empty';
+    empty.textContent = emptyText;
+    group.appendChild(empty);
+    return group;
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'status-table-wrap';
+  const table = document.createElement('table');
+  table.className = 'status-table';
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  columns.forEach((column) => {
+    const cell = document.createElement('th');
+    cell.textContent = column.label;
+    headerRow.appendChild(cell);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  rows.forEach((item) => {
+    const row = document.createElement('tr');
+    columns.forEach((column) => appendStatusCell(row, column.value(item), column.code));
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  group.appendChild(wrap);
+  return group;
+}
+
+function renderPairingStatus(result) {
+  pairingStatusContent.replaceChildren();
+  const codes = Array.isArray(result.codes) ? result.codes : [];
+  const users = Array.isArray(result.users) ? result.users : [];
+  const summary = document.createElement('div');
+  summary.className = 'status-summary';
+  const summaryItems = [
+    ['可使用授權碼', codes.filter((item) => item.status === 'available').length],
+    ['已使用／保留碼', codes.filter((item) => ['used', 'reserved'].includes(item.status)).length],
+    ['已開通 LINE 帳號', users.filter((item) => item.status === 'active').length]
+  ];
+  summaryItems.forEach(([label, value]) => {
+    const item = document.createElement('div');
+    item.className = 'status-summary-item';
+    const small = document.createElement('small');
+    small.textContent = label;
+    const strong = document.createElement('strong');
+    strong.textContent = String(value);
+    item.append(small, strong);
+    summary.appendChild(item);
+  });
+  pairingStatusContent.appendChild(summary);
+  pairingStatusContent.appendChild(renderStatusTable(
+    '授權碼紀錄',
+    [
+      { label: '備註', value: (item) => item.label || '未填寫' },
+      { label: '狀態', value: (item) => statusLabel(item.status) },
+      { label: '建立時間', value: (item) => formatStatusDate(item.createdAt) },
+      { label: '使用／綁定 LINE', value: (item) => item.lineUserId || item.lineUserIdMasked || '尚未綁定', code: true }
+    ],
+    codes,
+    '目前沒有授權碼紀錄。'
+  ));
+  pairingStatusContent.appendChild(renderStatusTable(
+    '已開通帳號',
+    [
+      { label: 'LINE user ID', value: (item) => item.lineUserId || item.lineUserIdMasked || '歷史資料未保存完整 LINE ID', code: true },
+      { label: '狀態', value: (item) => statusLabel(item.status) },
+      { label: '開通時間', value: (item) => formatStatusDate(item.pairedAt) },
+      { label: '使用權到期', value: (item) => formatStatusDate(item.accessExpiresAt) },
+      { label: '備註', value: (item) => item.label || '未填寫' }
+    ],
+    users,
+    '目前沒有已開通帳號。'
+  ));
+  pairingStatusContent.hidden = false;
+}
+
+async function refreshPairingStatus() {
+  const adminKey = adminKeyInput.value;
+  if (!adminKey) {
+    setPairingStatusMessage('請先輸入管理密碼。', 'error');
+    adminKeyInput.focus();
+    return;
+  }
+  if (!/^[\x20-\x7E]+$/.test(adminKey)) {
+    setPairingStatusMessage('管理密碼請使用英文、數字或半形符號。', 'error');
+    adminKeyInput.focus();
+    return;
+  }
+  refreshPairingStatusButton.disabled = true;
+  setPairingStatusMessage('正在查詢開通狀態...', 'working');
+  try {
+    const apiBaseUrl = await resolveHealthyApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/api/admin/pairing-status`, {
+      headers: { Accept: 'application/json', 'X-Admin-Key': adminKey },
+      cache: 'no-store'
+    });
+    const contentType = response.headers.get('content-type') || '';
+    const result = contentType.includes('application/json') ? await response.json() : { ok: false };
+    if (!response.ok || !result.ok) throw new Error(result.error || '無法取得開通狀態。');
+    renderPairingStatus(result);
+    setPairingStatusMessage(`查詢完成：${formatStatusDate(result.generatedAt)} 更新。`, 'success');
+  } catch (error) {
+    const message = String(error.message || '');
+    setPairingStatusMessage(/管理密碼|授權服務|開通狀態/.test(message) ? message : '開通狀態查詢失敗，請重新整理後再試。', 'error');
+  } finally {
+    refreshPairingStatusButton.disabled = false;
+  }
+}
+
 async function copyText(value) {
   try {
     await navigator.clipboard.writeText(value);
@@ -325,7 +484,7 @@ generatorForm.addEventListener('submit', async (event) => {
     if (result.featureAccess?.wbs) granted.push('WBS');
     if (result.featureAccess?.github) granted.push('GitHub');
     if (result.featureAccess?.sdVideo) granted.push(`SD 影片儲值 ${result.featureAccess.sdCredits} 積分（NT$${result.featureAccess.sdCredits}）`);
-    generatedCode.querySelector('small').textContent = `同一 LINE 帳號 30 天內限開通一次；本碼只能綁定一個帳號。${result.accessDays} 天使用權；${granted.length ? `已開通：${granted.join('、')}` : '未開通進階功能'}。授權碼將於 10 分鐘後失效。`;
+    generatedCode.querySelector('small').textContent = `同一 LINE 帳號 30 天內限開通一次；本碼只能綁定一個帳號。${result.accessDays} 天使用權；${granted.length ? `已開通：${granted.join('、')}` : '未開通進階功能'}。授權碼永久有效，第一次成功使用後立即失效。`;
     generatedCode.hidden = false;
     let credentialSaved = false;
     if (rememberAdminKey.checked) {
@@ -368,6 +527,8 @@ copyGeneratedCode.addEventListener('click', async () => {
   const copied = await copyText(code);
   setStatus(copied ? '授權碼已複製。' : '無法自動複製，請長按授權碼複製。', copied ? 'success' : 'error');
 });
+
+refreshPairingStatusButton.addEventListener('click', refreshPairingStatus);
 
 window.addEventListener('load', () => {
   renderIcons();
