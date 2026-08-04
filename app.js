@@ -17,6 +17,13 @@ const forgetAdminKey = document.querySelector('#forget-admin-key');
 const refreshPairingStatusButton = document.querySelector('#refresh-pairing-status');
 const pairingStatusMessage = document.querySelector('#pairing-status-message');
 const pairingStatusContent = document.querySelector('#pairing-status-content');
+const sdTopupForm = document.querySelector('#sd-topup-form');
+const sdTopupAccount = document.querySelector('#sd-topup-account');
+const sdTopupCredits = document.querySelector('#sd-topup-credits');
+const sdTopupNote = document.querySelector('#sd-topup-note');
+const sdTopupPreview = document.querySelector('#sd-topup-preview');
+const sdTopupStatus = document.querySelector('#sd-topup-status');
+const sdTopupSubmit = document.querySelector('#sd-topup-submit');
 
 const CREDENTIAL_DATABASE = 'bsmftek-activation';
 const CREDENTIAL_STORE = 'encrypted-settings';
@@ -36,6 +43,19 @@ function updateSdCreditPreview() {
     ? `目前可製作最長 ${seconds} 秒影片。`
     : `製作 ${SD_MIN_DURATION_SECONDS} 秒影片需 ${SD_MIN_DURATION_SECONDS * SD_CREDITS_PER_SECOND} 積分。`;
   sdCreditPreview.textContent = `1 元 = 1 積分；單次最低儲值 ${MIN_SD_RECHARGE_TWD} 元。${usableText}`;
+}
+
+function updateSdTopupPreview() {
+  const amount = Math.max(0, Number(sdTopupCredits.value || 0));
+  const seconds = Math.floor(amount / SD_CREDITS_PER_SECOND);
+  sdTopupPreview.textContent = amount >= MIN_SD_RECHARGE_TWD
+    ? `本次增加 ${amount} 積分，可製作 ${seconds} 秒影片。積分會直接累加。`
+    : `單次最低加值 ${MIN_SD_RECHARGE_TWD} 積分。`;
+}
+
+function setSdTopupStatus(message, type = '') {
+  sdTopupStatus.textContent = message;
+  sdTopupStatus.className = `status-message${type ? ` ${type}` : ''}`;
 }
 
 function syncCustomDaysState(focus = false) {
@@ -330,12 +350,44 @@ function renderPairingStatus(result) {
       { label: '狀態', value: (item) => statusLabel(item.status) },
       { label: '開通時間', value: (item) => formatStatusDate(item.pairedAt) },
       { label: '使用權到期', value: (item) => formatStatusDate(item.accessExpiresAt) },
+      { label: 'SD 影片', value: (item) => item.featureAccess?.sdVideo ? '已開通' : '未開通' },
+      { label: 'SD 積分', value: (item) => String(Number(item.featureAccess?.sdCredits || 0)) },
       { label: '備註', value: (item) => item.label || '未填寫' }
     ],
     users,
     '目前沒有已開通帳號。'
   ));
+  renderSdTopupAccounts(users);
   pairingStatusContent.hidden = false;
+}
+
+function renderSdTopupAccounts(users) {
+  const previousValue = sdTopupAccount.value;
+  const activeUsers = users.filter((item) => item.status === 'active' && item.lineUserId);
+  sdTopupAccount.replaceChildren();
+  if (!activeUsers.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '目前沒有可加值的有效帳號';
+    sdTopupAccount.appendChild(option);
+    sdTopupAccount.disabled = true;
+    sdTopupSubmit.disabled = true;
+  } else {
+    activeUsers.forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.lineUserId;
+      const accountLabel = item.label || item.lineUserIdMasked || item.lineUserId;
+      option.textContent = `${accountLabel}｜SD ${Number(item.featureAccess?.sdCredits || 0)} 積分`;
+      sdTopupAccount.appendChild(option);
+    });
+    sdTopupAccount.disabled = false;
+    sdTopupSubmit.disabled = false;
+    if (activeUsers.some((item) => item.lineUserId === previousValue)) {
+      sdTopupAccount.value = previousValue;
+    }
+  }
+  sdTopupForm.hidden = false;
+  updateSdTopupPreview();
 }
 
 async function refreshPairingStatus() {
@@ -397,6 +449,7 @@ featureSdVideo.addEventListener('change', () => {
   syncSdRechargeState(true);
 });
 sdCredits.addEventListener('input', updateSdCreditPreview);
+sdTopupCredits.addEventListener('input', updateSdTopupPreview);
 
 rememberAdminKey.addEventListener('change', async () => {
   if (rememberAdminKey.checked) return;
@@ -530,10 +583,65 @@ copyGeneratedCode.addEventListener('click', async () => {
 
 refreshPairingStatusButton.addEventListener('click', refreshPairingStatus);
 
+sdTopupForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  setSdTopupStatus('');
+  const lineUserId = sdTopupAccount.value;
+  const amount = Number(sdTopupCredits.value);
+  const note = sdTopupNote.value.trim();
+  const adminKey = adminKeyInput.value;
+  if (!lineUserId) {
+    setSdTopupStatus('請先選擇已開通的 LINE 帳號。', 'error');
+    return;
+  }
+  if (!Number.isInteger(amount) || amount < MIN_SD_RECHARGE_TWD || amount > 100000) {
+    setSdTopupStatus(`SD 加值單次最低 ${MIN_SD_RECHARGE_TWD} 積分，上限 100000 積分。`, 'error');
+    sdTopupCredits.focus();
+    return;
+  }
+  if (!adminKey) {
+    setSdTopupStatus('請先輸入上方管理密碼。', 'error');
+    adminKeyInput.focus();
+    return;
+  }
+  const selectedLabel = sdTopupAccount.options[sdTopupAccount.selectedIndex]?.textContent || '所選帳號';
+  if (!window.confirm(`確認替「${selectedLabel}」增加 ${amount} SD 積分？\n送出後會立即寫入帳號。`)) return;
+
+  sdTopupSubmit.disabled = true;
+  setSdTopupStatus('正在加值 SD 積分...', 'working');
+  try {
+    const apiBaseUrl = await resolveHealthyApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/api/admin/sd-credits`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey
+      },
+      body: JSON.stringify({ lineUserId, sdCredits: amount, note })
+    });
+    const contentType = response.headers.get('content-type') || '';
+    const result = contentType.includes('application/json')
+      ? await response.json()
+      : { ok: false, error: '授權服務回應格式錯誤。' };
+    if (!response.ok || !result.ok) throw new Error(result.error || 'SD 積分加值失敗。');
+    setSdTopupStatus(`加值完成：增加 ${result.added} 積分，目前餘額 ${result.remaining} 積分。`, 'success');
+    await refreshPairingStatus();
+    setSdTopupStatus(`加值完成：增加 ${result.added} 積分，目前餘額 ${result.remaining} 積分。`, 'success');
+  } catch (error) {
+    const message = String(error.message || '');
+    setSdTopupStatus(/管理密碼|LINE 帳號|使用權|停用|SD|積分|授權服務/.test(message)
+      ? message
+      : 'SD 積分加值失敗，請重新查詢帳號後再試。', 'error');
+  } finally {
+    sdTopupSubmit.disabled = sdTopupAccount.disabled;
+  }
+});
+
 window.addEventListener('load', () => {
   renderIcons();
   syncCustomDaysState();
   syncSdRechargeState();
+  updateSdTopupPreview();
   restoreRememberedAdminKey();
 });
 

@@ -11,7 +11,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' https://*.trycloudflare.com; base-uri 'self'; form-action 'self'">
   <title>藍星科技開通網</title>
   <link rel="icon" href="assets/bluestar-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20260803-2">
+  <link rel="stylesheet" href="styles.css?v=20260804-1">
 </head>
 <body>
   <main>
@@ -107,11 +107,40 @@
         </button>
       </div>
       <div id="pairing-status-message" class="status-message" role="status" aria-live="polite"></div>
+      <form id="sd-topup-form" class="sd-topup-form" novalidate hidden>
+        <div class="sd-topup-heading">
+          <div>
+            <h3>已開通帳號 SD 加值</h3>
+            <p>直接增加積分並啟用 SD 影片，原本的使用期限與其他功能不變。</p>
+          </div>
+          <span class="sd-topup-badge">1 元 = 1 積分</span>
+        </div>
+        <div class="sd-topup-grid">
+          <label class="topup-field topup-account" for="sd-topup-account">
+            <span>LINE 帳號</span>
+            <select id="sd-topup-account" required></select>
+          </label>
+          <label class="topup-field" for="sd-topup-credits">
+            <span>加值積分</span>
+            <input id="sd-topup-credits" type="number" inputmode="numeric" min="36" max="100000" step="1" value="45" required>
+          </label>
+          <label class="topup-field" for="sd-topup-note">
+            <span>加值備註（選填）</span>
+            <input id="sd-topup-note" type="text" maxlength="80" autocomplete="off" placeholder="例如：8 月 SD 加值">
+          </label>
+        </div>
+        <small id="sd-topup-preview" class="field-help">本次增加 45 積分，可製作 5 秒影片。</small>
+        <button id="sd-topup-submit" class="primary-button sd-topup-submit" type="submit">
+          <i data-lucide="badge-plus" aria-hidden="true"></i>
+          加值 SD 積分
+        </button>
+        <div id="sd-topup-status" class="status-message" role="status" aria-live="polite"></div>
+      </form>
       <div id="pairing-status-content" class="status-content" hidden></div>
     </section>
   </main>
 
   <script src="assets/lucide.min.js?v=0.468.0" defer></script>
-  <script src="app.js?v=20260803-3" defer></script>
+  <script src="app.js?v=20260804-1" defer></script>
 </body>
 </html>
