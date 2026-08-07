@@ -25,7 +25,6 @@ const sdTopupPreview = document.querySelector('#sd-topup-preview');
 const sdTopupStatus = document.querySelector('#sd-topup-status');
 const sdTopupSubmit = document.querySelector('#sd-topup-submit');
 const imageQuotaUserList = document.querySelector('#image-quota-user-list');
-const resetAllImageQuota = document.querySelector('#reset-all-image-quota');
 const imageQuotaStatus = document.querySelector('#image-quota-status');
 
 const CREDENTIAL_DATABASE = 'bsmftek-activation';
@@ -426,12 +425,12 @@ function renderSdTopupAccounts(users) {
 }
 
 function renderImageQuotaAccounts(users) {
-  const availableUsers = users.filter((item) => item.lineUserId);
+  const availableUsers = users.filter((item) => item.status === 'active' && item.lineUserId);
   imageQuotaUserList.replaceChildren();
   if (!availableUsers.length) {
     const empty = document.createElement('p');
     empty.className = 'status-empty';
-    empty.textContent = '目前沒有可管理的 LINE 帳號。';
+    empty.textContent = '目前沒有可管理的已開通 LINE 帳號。';
     imageQuotaUserList.appendChild(empty);
     return;
   }
@@ -515,20 +514,17 @@ async function resetImageQuota(scope, lineUserId = '', selectedLabel = '') {
     adminKeyInput.focus();
     return;
   }
-  if (scope === 'user' && !lineUserId) {
+  if (scope !== 'user' || !lineUserId) {
     setImageQuotaStatus('請先查詢並選擇 LINE 帳號。', 'error');
     return;
   }
-  const confirmationLabel = scope === 'user' ? selectedLabel || '所選用戶' : '今天全部用戶';
-  const confirmation = scope === 'all'
-    ? '確認重置今天全部用戶的做圖額度？\n執行後，今天已使用與預約中的 IMAGE2 張數都會歸零。'
-    : `確認重置「${confirmationLabel}」今天的做圖額度？\n只影響這位用戶今天的 IMAGE2 額度。`;
+  const confirmationLabel = selectedLabel || '所選用戶';
+  const confirmation = `確認重置「${confirmationLabel}」今天的做圖額度？\n只影響這位用戶今天的 IMAGE2 額度。`;
   setImageQuotaStatus('');
   if (!window.confirm(confirmation)) return;
 
   setIndividualQuotaButtonsDisabled(true);
-  resetAllImageQuota.disabled = true;
-  setImageQuotaStatus(scope === 'all' ? '正在重置今天全部用戶額度...' : '正在重置此用戶額度...', 'working');
+  setImageQuotaStatus('正在重置此客戶額度...', 'working');
   try {
     const apiBaseUrl = await resolveHealthyApiBaseUrl();
     const response = await fetch(`${apiBaseUrl}/api/admin/image-quota-reset`, {
@@ -537,16 +533,14 @@ async function resetImageQuota(scope, lineUserId = '', selectedLabel = '') {
         'Content-Type': 'application/json',
         'X-Admin-Key': adminKey
       },
-      body: JSON.stringify({ scope, ...(lineUserId ? { lineUserId } : {}) })
+      body: JSON.stringify({ scope: 'user', lineUserId })
     });
     const contentType = response.headers.get('content-type') || '';
     const result = contentType.includes('application/json')
       ? await response.json()
       : { ok: false, error: '授權服務回應格式錯誤。' };
     if (!response.ok || !result.ok) throw new Error(result.error || '做圖額度重置失敗。');
-    const successMessage = scope === 'all'
-      ? `已重置今天全部用戶額度：影響 ${Number(result.affectedUsers || 0)} 位，釋放已使用 ${Number(result.releasedGenerated || 0)} 張、預約 ${Number(result.releasedReserved || 0)} 張。`
-      : `此用戶今天額度已重置：釋放已使用 ${Number(result.releasedGenerated || 0)} 張、預約 ${Number(result.releasedReserved || 0)} 張，目前剩餘 ${Number(result.quota?.remaining || 0)} 張。`;
+    const successMessage = `「${confirmationLabel}」今天額度已重置：釋放已使用 ${Number(result.releasedGenerated || 0)} 張、預約 ${Number(result.releasedReserved || 0)} 張，目前剩餘 ${Number(result.quota?.remaining || 0)} 張。`;
     await refreshPairingStatus();
     setImageQuotaStatus(successMessage, 'success');
   } catch (error) {
@@ -555,7 +549,6 @@ async function resetImageQuota(scope, lineUserId = '', selectedLabel = '') {
       ? message
       : '做圖額度重置失敗，請重新查詢後再試。', 'error');
   } finally {
-    resetAllImageQuota.disabled = false;
     setIndividualQuotaButtonsDisabled(false);
   }
 }
@@ -724,7 +717,6 @@ imageQuotaUserList.addEventListener('click', (event) => {
   if (!button) return;
   resetImageQuota('user', button.dataset.lineUserId, button.dataset.userLabel);
 });
-resetAllImageQuota.addEventListener('click', () => resetImageQuota('all'));
 
 sdTopupForm.addEventListener('submit', async (event) => {
   event.preventDefault();

@@ -11,7 +11,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' https://*.trycloudflare.com; base-uri 'self'; form-action 'self'">
   <title>藍星科技開通網</title>
   <link rel="icon" href="assets/bluestar-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20260807-2">
+  <link rel="stylesheet" href="styles.css?v=20260807-3">
 </head>
 <body>
   <main>
@@ -98,15 +98,28 @@
     <section class="status-panel" aria-labelledby="status-panel-title">
       <div class="status-panel-heading">
         <div>
-          <h2 id="status-panel-title">開通狀態查詢</h2>
-          <p>查看授權碼是否已使用，以及已綁定的 LINE 帳號。</p>
+          <h2 id="status-panel-title">客戶管理</h2>
+          <p>查詢客戶開通狀態與今日做圖額度。</p>
         </div>
         <button id="refresh-pairing-status" class="secondary-button status-refresh" type="button">
           <i data-lucide="refresh-cw" aria-hidden="true"></i>
-          查詢
+          查詢客戶與額度
         </button>
       </div>
       <div id="pairing-status-message" class="status-message" role="status" aria-live="polite"></div>
+      <section id="image-quota-reset-form" class="image-quota-reset-form" aria-labelledby="image-quota-title">
+        <div class="quota-management-heading">
+          <div>
+            <h3 id="image-quota-title">個別客戶今日做圖額度</h3>
+            <p>查詢後，每位客戶各自顯示已用、處理中、剩餘額度與重置按鈕。</p>
+          </div>
+          <span class="sd-topup-badge">個別管理</span>
+        </div>
+        <div id="image-quota-user-list" class="image-quota-user-list">
+          <p class="status-empty">輸入上方管理密碼後，按「查詢客戶與額度」即可管理每位客戶。</p>
+        </div>
+        <div id="image-quota-status" class="status-message" role="status" aria-live="polite"></div>
+      </section>
       <form id="sd-topup-form" class="sd-topup-form" novalidate hidden>
         <div class="sd-topup-heading">
           <div>
@@ -136,30 +149,11 @@
         </button>
         <div id="sd-topup-status" class="status-message" role="status" aria-live="polite"></div>
       </form>
-      <section id="image-quota-reset-form" class="image-quota-reset-form" aria-labelledby="image-quota-title">
-        <div class="sd-topup-heading">
-          <div>
-            <h3 id="image-quota-title">今日做圖額度管理</h3>
-            <p>只重置今天的 IMAGE2 做圖額度，不影響歷史成品、SD 積分或使用期限。</p>
-          </div>
-          <span class="sd-topup-badge">每日額度</span>
-        </div>
-        <div class="image-quota-grid">
-          <div id="image-quota-user-list" class="image-quota-user-list">
-            <p class="status-empty">請先輸入管理密碼並按「查詢」，每位用戶旁會顯示單獨重置按鈕。</p>
-          </div>
-          <button id="reset-all-image-quota" class="danger-button" type="button">
-            <i data-lucide="users" aria-hidden="true"></i>
-            重置今天全部用戶額度
-          </button>
-        </div>
-        <div id="image-quota-status" class="status-message" role="status" aria-live="polite"></div>
-      </section>
       <div id="pairing-status-content" class="status-content" hidden></div>
     </section>
   </main>
 
   <script src="assets/lucide.min.js?v=0.468.0" defer></script>
-  <script src="app.js?v=20260807-2" defer></script>
+  <script src="app.js?v=20260807-3" defer></script>
 </body>
 </html>
