@@ -33,6 +33,7 @@ button {
 
 main {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
   place-items: center;
   align-content: start;
@@ -42,6 +43,8 @@ main {
 
 .generator-form {
   width: min(100%, 720px);
+  min-width: 0;
+  justify-self: center;
   padding: 34px;
   border: 1px solid #5f6672;
   border-radius: 8px;
@@ -264,6 +267,8 @@ legend,
 
 .status-panel {
   width: min(100%, 720px);
+  min-width: 0;
+  justify-self: center;
   padding: 26px 34px;
   border: 1px solid #5f6672;
   border-radius: 8px;
@@ -338,18 +343,57 @@ legend,
 
 .image-quota-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
-  align-items: end;
   margin-top: 18px;
 }
 
-.image-quota-grid .topup-field {
+.image-quota-user-list {
+  display: grid;
+  gap: 10px;
+}
+
+.quota-user-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #444b55;
+  border-radius: 8px;
+  background: #181a1d;
+}
+
+.quota-user-identity {
   min-width: 0;
 }
 
-.image-quota-grid .danger-button {
-  grid-column: 1 / -1;
+.quota-user-identity strong,
+.quota-user-identity small {
+  display: block;
+}
+
+.quota-user-identity strong {
+  color: #f7f8fa;
+  font-size: 1rem;
+}
+
+.quota-user-identity small {
+  margin-top: 5px;
+  color: #9fa6b0;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.quota-user-usage {
+  grid-column: 1;
+  margin: 0;
+  color: #b9ccff;
+  font-size: 0.9rem;
+}
+
+.quota-user-row .quota-reset-button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 .topup-account {
@@ -451,6 +495,13 @@ legend,
   display: none;
 }
 
+.status-content,
+.status-group,
+.status-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .status-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -491,6 +542,7 @@ legend,
 }
 
 .status-table-wrap {
+  width: 100%;
   overflow-x: auto;
   border: 1px solid #444b55;
   border-radius: 8px;
@@ -658,8 +710,14 @@ legend,
     grid-template-columns: 1fr;
   }
 
-  .image-quota-grid .danger-button {
-    grid-column: auto;
+  .quota-user-row {
+    grid-template-columns: 1fr;
+  }
+
+  .quota-user-usage,
+  .quota-user-row .quota-reset-button {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .quota-reset-button,

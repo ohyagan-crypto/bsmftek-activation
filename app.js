@@ -24,8 +24,7 @@ const sdTopupNote = document.querySelector('#sd-topup-note');
 const sdTopupPreview = document.querySelector('#sd-topup-preview');
 const sdTopupStatus = document.querySelector('#sd-topup-status');
 const sdTopupSubmit = document.querySelector('#sd-topup-submit');
-const imageQuotaAccount = document.querySelector('#image-quota-account');
-const resetUserImageQuota = document.querySelector('#reset-user-image-quota');
+const imageQuotaUserList = document.querySelector('#image-quota-user-list');
 const resetAllImageQuota = document.querySelector('#reset-all-image-quota');
 const imageQuotaStatus = document.querySelector('#image-quota-status');
 
@@ -281,6 +280,18 @@ function appendStatusCell(row, value, code = false) {
   row.appendChild(cell);
 }
 
+function userDisplayName(item) {
+  return item.displayName || item.lineDisplayName || item.label || '未命名用戶';
+}
+
+function userIdentityDetail(item) {
+  const name = userDisplayName(item);
+  return [
+    item.label && item.label !== name ? `備註：${item.label}` : '',
+    item.lineUserIdMasked ? `LINE 尾碼：${item.lineUserIdMasked}` : ''
+  ].filter(Boolean).join('｜');
+}
+
 function renderStatusTable(title, columns, rows, emptyText) {
   const group = document.createElement('section');
   group.className = 'status-group';
@@ -323,6 +334,7 @@ function renderPairingStatus(result) {
   pairingStatusContent.replaceChildren();
   const codes = Array.isArray(result.codes) ? result.codes : [];
   const users = Array.isArray(result.users) ? result.users : [];
+  const usersByLineId = new Map(users.filter((item) => item.lineUserId).map((item) => [item.lineUserId, item]));
   const summary = document.createElement('div');
   summary.className = 'status-summary';
   const summaryItems = [
@@ -347,7 +359,13 @@ function renderPairingStatus(result) {
       { label: '備註', value: (item) => item.label || '未填寫' },
       { label: '狀態', value: (item) => statusLabel(item.status) },
       { label: '建立時間', value: (item) => formatStatusDate(item.createdAt) },
-      { label: '使用／綁定 LINE', value: (item) => item.lineUserId || item.lineUserIdMasked || '尚未綁定', code: true }
+      {
+        label: '使用／綁定用戶',
+        value: (item) => {
+          const user = usersByLineId.get(item.lineUserId);
+          return user ? userDisplayName(user) : item.boundLabel || item.lineUserIdMasked || '尚未綁定';
+        }
+      }
     ],
     codes,
     '目前沒有授權碼紀錄。'
@@ -355,7 +373,8 @@ function renderPairingStatus(result) {
   pairingStatusContent.appendChild(renderStatusTable(
     '已開通帳號',
     [
-      { label: 'LINE user ID', value: (item) => item.lineUserId || item.lineUserIdMasked || '歷史資料未保存完整 LINE ID', code: true },
+      { label: '用戶名稱', value: (item) => userDisplayName(item) },
+      { label: '辨識資料', value: (item) => userIdentityDetail(item) || '尚無備註' },
       { label: '狀態', value: (item) => statusLabel(item.status) },
       { label: '開通時間', value: (item) => formatStatusDate(item.pairedAt) },
       { label: '使用權到期', value: (item) => formatStatusDate(item.accessExpiresAt) },
@@ -392,8 +411,8 @@ function renderSdTopupAccounts(users) {
     activeUsers.forEach((item) => {
       const option = document.createElement('option');
       option.value = item.lineUserId;
-      const accountLabel = item.label || item.lineUserIdMasked || item.lineUserId;
-      option.textContent = `${accountLabel}｜SD ${Number(item.featureAccess?.sdCredits || 0)} 積分`;
+      const identity = userIdentityDetail(item);
+      option.textContent = `${userDisplayName(item)}${identity ? `｜${identity}` : ''}｜SD ${Number(item.featureAccess?.sdCredits || 0)} 積分`;
       sdTopupAccount.appendChild(option);
     });
     sdTopupAccount.disabled = false;
@@ -407,31 +426,48 @@ function renderSdTopupAccounts(users) {
 }
 
 function renderImageQuotaAccounts(users) {
-  const previousValue = imageQuotaAccount.value;
   const availableUsers = users.filter((item) => item.lineUserId);
-  imageQuotaAccount.replaceChildren();
+  imageQuotaUserList.replaceChildren();
   if (!availableUsers.length) {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = '目前沒有可管理的 LINE 帳號';
-    imageQuotaAccount.appendChild(option);
-    imageQuotaAccount.disabled = true;
-    resetUserImageQuota.disabled = true;
+    const empty = document.createElement('p');
+    empty.className = 'status-empty';
+    empty.textContent = '目前沒有可管理的 LINE 帳號。';
+    imageQuotaUserList.appendChild(empty);
     return;
   }
   availableUsers.forEach((item) => {
-    const option = document.createElement('option');
-    option.value = item.lineUserId;
-    const accountLabel = item.label || item.lineUserIdMasked || item.lineUserId;
+    const row = document.createElement('article');
+    row.className = 'quota-user-row';
+    const identity = document.createElement('div');
+    identity.className = 'quota-user-identity';
+    const name = document.createElement('strong');
+    name.textContent = userDisplayName(item);
+    const detail = document.createElement('small');
+    detail.textContent = userIdentityDetail(item) || '已開通 LINE 用戶';
+    identity.append(name, detail);
     const quota = item.imageQuota || {};
-    option.textContent = `${accountLabel}｜今日已用 ${Number(quota.generated || 0)}，剩餘 ${Number(quota.remaining ?? quota.limit ?? 0)}`;
-    imageQuotaAccount.appendChild(option);
+    const usage = document.createElement('p');
+    usage.className = 'quota-user-usage';
+    usage.textContent = `今日已用 ${Number(quota.generated || 0)}｜處理中 ${Number(quota.reserved || 0)}｜剩餘 ${Number(quota.remaining ?? quota.limit ?? 0)}`;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'quota-reset-button';
+    button.dataset.lineUserId = item.lineUserId;
+    button.dataset.userLabel = userDisplayName(item);
+    const icon = document.createElement('i');
+    icon.setAttribute('data-lucide', 'rotate-ccw');
+    icon.setAttribute('aria-hidden', 'true');
+    button.append(icon, document.createTextNode(' 單獨重置此用戶額度'));
+    row.append(identity, usage, button);
+    imageQuotaUserList.appendChild(row);
   });
-  imageQuotaAccount.disabled = false;
-  resetUserImageQuota.disabled = false;
-  if (availableUsers.some((item) => item.lineUserId === previousValue)) {
-    imageQuotaAccount.value = previousValue;
-  }
+  renderIcons();
+}
+
+function setIndividualQuotaButtonsDisabled(disabled) {
+  imageQuotaUserList.querySelectorAll('[data-line-user-id]').forEach((button) => {
+    button.disabled = disabled;
+  });
 }
 
 async function refreshPairingStatus() {
@@ -467,9 +503,8 @@ async function refreshPairingStatus() {
   }
 }
 
-async function resetImageQuota(scope) {
+async function resetImageQuota(scope, lineUserId = '', selectedLabel = '') {
   const adminKey = adminKeyInput.value;
-  const lineUserId = scope === 'user' ? imageQuotaAccount.value : '';
   if (!adminKey) {
     setImageQuotaStatus('請先輸入上方管理密碼。', 'error');
     adminKeyInput.focus();
@@ -484,16 +519,14 @@ async function resetImageQuota(scope) {
     setImageQuotaStatus('請先查詢並選擇 LINE 帳號。', 'error');
     return;
   }
-  const selectedLabel = scope === 'user'
-    ? imageQuotaAccount.options[imageQuotaAccount.selectedIndex]?.textContent || '所選帳號'
-    : '今天全部用戶';
+  const confirmationLabel = scope === 'user' ? selectedLabel || '所選用戶' : '今天全部用戶';
   const confirmation = scope === 'all'
     ? '確認重置今天全部用戶的做圖額度？\n執行後，今天已使用與預約中的 IMAGE2 張數都會歸零。'
-    : `確認重置「${selectedLabel}」今天的做圖額度？\n只影響這位用戶今天的 IMAGE2 額度。`;
+    : `確認重置「${confirmationLabel}」今天的做圖額度？\n只影響這位用戶今天的 IMAGE2 額度。`;
   setImageQuotaStatus('');
   if (!window.confirm(confirmation)) return;
 
-  resetUserImageQuota.disabled = true;
+  setIndividualQuotaButtonsDisabled(true);
   resetAllImageQuota.disabled = true;
   setImageQuotaStatus(scope === 'all' ? '正在重置今天全部用戶額度...' : '正在重置此用戶額度...', 'working');
   try {
@@ -523,7 +556,7 @@ async function resetImageQuota(scope) {
       : '做圖額度重置失敗，請重新查詢後再試。', 'error');
   } finally {
     resetAllImageQuota.disabled = false;
-    resetUserImageQuota.disabled = imageQuotaAccount.disabled;
+    setIndividualQuotaButtonsDisabled(false);
   }
 }
 
@@ -686,7 +719,11 @@ copyGeneratedCode.addEventListener('click', async () => {
 });
 
 refreshPairingStatusButton.addEventListener('click', refreshPairingStatus);
-resetUserImageQuota.addEventListener('click', () => resetImageQuota('user'));
+imageQuotaUserList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-line-user-id]');
+  if (!button) return;
+  resetImageQuota('user', button.dataset.lineUserId, button.dataset.userLabel);
+});
 resetAllImageQuota.addEventListener('click', () => resetImageQuota('all'));
 
 sdTopupForm.addEventListener('submit', async (event) => {
