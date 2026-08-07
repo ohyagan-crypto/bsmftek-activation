@@ -296,6 +296,12 @@ legend,
   border-top: 1px solid #353b44;
 }
 
+.image-quota-reset-form {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid #353b44;
+}
+
 .sd-topup-heading {
   display: flex;
   align-items: flex-start;
@@ -328,6 +334,22 @@ legend,
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-top: 18px;
+}
+
+.image-quota-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 18px;
+}
+
+.image-quota-grid .topup-field {
+  min-width: 0;
+}
+
+.image-quota-grid .danger-button {
+  grid-column: 1 / -1;
 }
 
 .topup-account {
@@ -363,6 +385,60 @@ legend,
 .sd-topup-submit {
   min-height: 54px;
   margin-top: 18px;
+}
+
+.quota-reset-button,
+.danger-button {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 16px;
+  border: 1px solid #5d636c;
+  border-radius: 8px;
+  background: #20242a;
+  color: #f7f8fa;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.quota-reset-button:hover,
+.quota-reset-button:focus-visible {
+  border-color: #6f98ff;
+  background: #252d3a;
+}
+
+.danger-button {
+  border-color: #9a4348;
+  background: #35191c;
+  color: #ffb2b6;
+}
+
+.danger-button:hover,
+.danger-button:focus-visible {
+  border-color: #ff7777;
+  background: #472024;
+  color: #ffd3d5;
+}
+
+.quota-reset-button:focus-visible,
+.danger-button:focus-visible {
+  outline: 3px solid rgb(76 127 255 / 28%);
+  outline-offset: 2px;
+}
+
+.quota-reset-button:disabled,
+.danger-button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.quota-reset-button svg,
+.danger-button svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
 }
 
 .status-refresh {
@@ -576,6 +652,19 @@ legend,
 
   .sd-topup-grid {
     grid-template-columns: 1fr;
+  }
+
+  .image-quota-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .image-quota-grid .danger-button {
+    grid-column: auto;
+  }
+
+  .quota-reset-button,
+  .danger-button {
+    width: 100%;
   }
 
   .topup-account {

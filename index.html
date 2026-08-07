@@ -11,7 +11,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' https://*.trycloudflare.com; base-uri 'self'; form-action 'self'">
   <title>藍星科技開通網</title>
   <link rel="icon" href="assets/bluestar-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20260804-1">
+  <link rel="stylesheet" href="styles.css?v=20260807-1">
 </head>
 <body>
   <main>
@@ -136,11 +136,37 @@
         </button>
         <div id="sd-topup-status" class="status-message" role="status" aria-live="polite"></div>
       </form>
+      <section id="image-quota-reset-form" class="image-quota-reset-form" aria-labelledby="image-quota-title">
+        <div class="sd-topup-heading">
+          <div>
+            <h3 id="image-quota-title">今日做圖額度管理</h3>
+            <p>只重置今天的 IMAGE2 做圖額度，不影響歷史成品、SD 積分或使用期限。</p>
+          </div>
+          <span class="sd-topup-badge">每日額度</span>
+        </div>
+        <div class="image-quota-grid">
+          <label class="topup-field" for="image-quota-account">
+            <span>指定 LINE 帳號</span>
+            <select id="image-quota-account" disabled>
+              <option value="">請先查詢開通狀態</option>
+            </select>
+          </label>
+          <button id="reset-user-image-quota" class="quota-reset-button" type="button" disabled>
+            <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            重置此用戶
+          </button>
+          <button id="reset-all-image-quota" class="danger-button" type="button">
+            <i data-lucide="users" aria-hidden="true"></i>
+            重置今天全部用戶
+          </button>
+        </div>
+        <div id="image-quota-status" class="status-message" role="status" aria-live="polite"></div>
+      </section>
       <div id="pairing-status-content" class="status-content" hidden></div>
     </section>
   </main>
 
   <script src="assets/lucide.min.js?v=0.468.0" defer></script>
-  <script src="app.js?v=20260804-1" defer></script>
+  <script src="app.js?v=20260807-1" defer></script>
 </body>
 </html>

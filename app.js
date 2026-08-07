@@ -24,6 +24,10 @@ const sdTopupNote = document.querySelector('#sd-topup-note');
 const sdTopupPreview = document.querySelector('#sd-topup-preview');
 const sdTopupStatus = document.querySelector('#sd-topup-status');
 const sdTopupSubmit = document.querySelector('#sd-topup-submit');
+const imageQuotaAccount = document.querySelector('#image-quota-account');
+const resetUserImageQuota = document.querySelector('#reset-user-image-quota');
+const resetAllImageQuota = document.querySelector('#reset-all-image-quota');
+const imageQuotaStatus = document.querySelector('#image-quota-status');
 
 const CREDENTIAL_DATABASE = 'bsmftek-activation';
 const CREDENTIAL_STORE = 'encrypted-settings';
@@ -240,6 +244,11 @@ function setPairingStatusMessage(message, type = '') {
   pairingStatusMessage.className = `status-message${type ? ` ${type}` : ''}`;
 }
 
+function setImageQuotaStatus(message, type = '') {
+  imageQuotaStatus.textContent = message;
+  imageQuotaStatus.className = `status-message${type ? ` ${type}` : ''}`;
+}
+
 function formatStatusDate(value, emptyText = '未記錄') {
   if (!value) return emptyText;
   return new Intl.DateTimeFormat('zh-TW', {
@@ -352,12 +361,19 @@ function renderPairingStatus(result) {
       { label: '使用權到期', value: (item) => formatStatusDate(item.accessExpiresAt) },
       { label: 'SD 影片', value: (item) => item.featureAccess?.sdVideo ? '已開通' : '未開通' },
       { label: 'SD 積分', value: (item) => String(Number(item.featureAccess?.sdCredits || 0)) },
+      {
+        label: '今日做圖',
+        value: (item) => item.imageQuota
+          ? `已用 ${Number(item.imageQuota.generated || 0)}／${Number(item.imageQuota.limit || 0)}，剩餘 ${Number(item.imageQuota.remaining || 0)}`
+          : '尚無使用紀錄'
+      },
       { label: '備註', value: (item) => item.label || '未填寫' }
     ],
     users,
     '目前沒有已開通帳號。'
   ));
   renderSdTopupAccounts(users);
+  renderImageQuotaAccounts(users);
   pairingStatusContent.hidden = false;
 }
 
@@ -390,6 +406,34 @@ function renderSdTopupAccounts(users) {
   updateSdTopupPreview();
 }
 
+function renderImageQuotaAccounts(users) {
+  const previousValue = imageQuotaAccount.value;
+  const availableUsers = users.filter((item) => item.lineUserId);
+  imageQuotaAccount.replaceChildren();
+  if (!availableUsers.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '目前沒有可管理的 LINE 帳號';
+    imageQuotaAccount.appendChild(option);
+    imageQuotaAccount.disabled = true;
+    resetUserImageQuota.disabled = true;
+    return;
+  }
+  availableUsers.forEach((item) => {
+    const option = document.createElement('option');
+    option.value = item.lineUserId;
+    const accountLabel = item.label || item.lineUserIdMasked || item.lineUserId;
+    const quota = item.imageQuota || {};
+    option.textContent = `${accountLabel}｜今日已用 ${Number(quota.generated || 0)}，剩餘 ${Number(quota.remaining ?? quota.limit ?? 0)}`;
+    imageQuotaAccount.appendChild(option);
+  });
+  imageQuotaAccount.disabled = false;
+  resetUserImageQuota.disabled = false;
+  if (availableUsers.some((item) => item.lineUserId === previousValue)) {
+    imageQuotaAccount.value = previousValue;
+  }
+}
+
 async function refreshPairingStatus() {
   const adminKey = adminKeyInput.value;
   if (!adminKey) {
@@ -420,6 +464,66 @@ async function refreshPairingStatus() {
     setPairingStatusMessage(/管理密碼|授權服務|開通狀態/.test(message) ? message : '開通狀態查詢失敗，請重新整理後再試。', 'error');
   } finally {
     refreshPairingStatusButton.disabled = false;
+  }
+}
+
+async function resetImageQuota(scope) {
+  const adminKey = adminKeyInput.value;
+  const lineUserId = scope === 'user' ? imageQuotaAccount.value : '';
+  if (!adminKey) {
+    setImageQuotaStatus('請先輸入上方管理密碼。', 'error');
+    adminKeyInput.focus();
+    return;
+  }
+  if (!/^[\x20-\x7E]+$/.test(adminKey)) {
+    setImageQuotaStatus('管理密碼請使用英文、數字或半形符號。', 'error');
+    adminKeyInput.focus();
+    return;
+  }
+  if (scope === 'user' && !lineUserId) {
+    setImageQuotaStatus('請先查詢並選擇 LINE 帳號。', 'error');
+    return;
+  }
+  const selectedLabel = scope === 'user'
+    ? imageQuotaAccount.options[imageQuotaAccount.selectedIndex]?.textContent || '所選帳號'
+    : '今天全部用戶';
+  const confirmation = scope === 'all'
+    ? '確認重置今天全部用戶的做圖額度？\n執行後，今天已使用與預約中的 IMAGE2 張數都會歸零。'
+    : `確認重置「${selectedLabel}」今天的做圖額度？\n只影響這位用戶今天的 IMAGE2 額度。`;
+  setImageQuotaStatus('');
+  if (!window.confirm(confirmation)) return;
+
+  resetUserImageQuota.disabled = true;
+  resetAllImageQuota.disabled = true;
+  setImageQuotaStatus(scope === 'all' ? '正在重置今天全部用戶額度...' : '正在重置此用戶額度...', 'working');
+  try {
+    const apiBaseUrl = await resolveHealthyApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/api/admin/image-quota-reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey
+      },
+      body: JSON.stringify({ scope, ...(lineUserId ? { lineUserId } : {}) })
+    });
+    const contentType = response.headers.get('content-type') || '';
+    const result = contentType.includes('application/json')
+      ? await response.json()
+      : { ok: false, error: '授權服務回應格式錯誤。' };
+    if (!response.ok || !result.ok) throw new Error(result.error || '做圖額度重置失敗。');
+    const successMessage = scope === 'all'
+      ? `已重置今天全部用戶額度：影響 ${Number(result.affectedUsers || 0)} 位，釋放已使用 ${Number(result.releasedGenerated || 0)} 張、預約 ${Number(result.releasedReserved || 0)} 張。`
+      : `此用戶今天額度已重置：釋放已使用 ${Number(result.releasedGenerated || 0)} 張、預約 ${Number(result.releasedReserved || 0)} 張，目前剩餘 ${Number(result.quota?.remaining || 0)} 張。`;
+    await refreshPairingStatus();
+    setImageQuotaStatus(successMessage, 'success');
+  } catch (error) {
+    const message = String(error.message || '');
+    setImageQuotaStatus(/管理密碼|LINE 帳號|做圖|故事版|額度|授權服務|執行中/.test(message)
+      ? message
+      : '做圖額度重置失敗，請重新查詢後再試。', 'error');
+  } finally {
+    resetAllImageQuota.disabled = false;
+    resetUserImageQuota.disabled = imageQuotaAccount.disabled;
   }
 }
 
@@ -582,6 +686,8 @@ copyGeneratedCode.addEventListener('click', async () => {
 });
 
 refreshPairingStatusButton.addEventListener('click', refreshPairingStatus);
+resetUserImageQuota.addEventListener('click', () => resetImageQuota('user'));
+resetAllImageQuota.addEventListener('click', () => resetImageQuota('all'));
 
 sdTopupForm.addEventListener('submit', async (event) => {
   event.preventDefault();
