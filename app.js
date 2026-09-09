@@ -1,4 +1,5 @@
 const CONFIG_URL = './activation-api.json';
+const STABLE_API_HOSTNAME = 'lbot1.lanxingapi.com';
 
 const generatorForm = document.querySelector('#generator-form');
 const generatorStatus = document.querySelector('#generator-status');
@@ -197,7 +198,9 @@ async function resolveApiBaseUrl() {
 
   const config = await response.json();
   const endpoint = new URL(String(config.apiBaseUrl || ''));
-  if (endpoint.protocol !== 'https:' || !endpoint.hostname.endsWith('.trycloudflare.com')) {
+  const isQuickTunnel = endpoint.hostname.endsWith('.trycloudflare.com');
+  const isStableTunnel = endpoint.hostname === STABLE_API_HOSTNAME;
+  if (endpoint.protocol !== 'https:' || (!isQuickTunnel && !isStableTunnel)) {
     throw new Error('授權服務設定無效，請稍後再試。');
   }
   return endpoint.origin;
