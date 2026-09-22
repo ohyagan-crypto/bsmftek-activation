@@ -217,7 +217,7 @@ async function verifyApiBaseUrl(apiBaseUrl) {
     });
     if (!response.ok) throw new Error('授權服務目前無法連線。');
     const result = await response.json();
-    if (result.status !== 'ok' || result.service !== 'line-bsmftek-relay') {
+    if (result.status !== 'ok' || !['line-bsmftek-relay', 'lbot1-clean-production-v2'].includes(result.service)) {
       throw new Error('授權服務目前無法連線。');
     }
   } finally {
