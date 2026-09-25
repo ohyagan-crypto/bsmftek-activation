@@ -2,7 +2,6 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 
 const root = path.resolve('.');
 const port = Number(process.env.ACTIVATION_FIXTURE_PORT || 4181);
@@ -10,8 +9,8 @@ const apiOrigin = `http://127.0.0.1:${port + 1}`;
 const fixtureKey = 'fixture-admin-key';
 const fixtureCode = 'HEALTHCHECK_20260925';
 let apiMode = 'success';
-const legacyIndex = execFileSync('git', ['show', '529cdb6:index.html'], { encoding: 'utf8' });
-const legacyApp = execFileSync('git', ['show', '529cdb6:app.js'], { encoding: 'utf8' });
+const legacyIndex = `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>藍星科技開通網</title></head><body><main><h1>藍星科技開通網</h1><form id="generator-form"><input id="admin-key" type="password"><button type="submit">產生授權碼</button></form><p id="generator-status"></p></main><script src="app.js?v=20260925-1" defer></script></body></html>`;
+const legacyApp = `document.querySelector('#generator-form')?.addEventListener('submit', event => { event.preventDefault(); document.querySelector('#generator-status').textContent = '授權服務連線失敗，請重新整理後再試。'; });`;
 const legacyWorker = `
   const CACHE='shamie-app-fixture-old';
   const OLD_HTML=${JSON.stringify(legacyIndex)};
