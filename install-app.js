@@ -54,7 +54,10 @@ function showManualInstall() {
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    return await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+    return await navigator.serviceWorker.register('./service-worker.js', {
+      scope: './',
+      updateViaCache: 'none'
+    });
   } catch (_) {
     status.textContent = '目前瀏覽器無法完成安裝，請更新瀏覽器後再試。';
     return null;

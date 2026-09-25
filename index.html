@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#151922">
   <meta name="description" content="藍星科技授權碼產生工具">
+  <meta name="app-build-id" content="20260925-activation-diag-01">
+  <meta name="app-js-version" content="20260925-2">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' https://*.trycloudflare.com https://lbot1.lanxingapi.com; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' https://*.trycloudflare.com https://lbot1.lanxingapi.com http://127.0.0.1:* http://localhost:*; base-uri 'self'; form-action 'self'">
   <title>藍星科技開通網</title>
   <link rel="icon" href="assets/bluestar-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20260807-3">
+  <link rel="stylesheet" href="styles.css?v=20260925-2">
 </head>
 <body>
   <main>
@@ -153,7 +155,24 @@
     </section>
   </main>
 
+  <footer id="build-diagnostics" class="build-diagnostics" aria-label="網站診斷資訊">
+    <div class="diagnostic-build-line">
+      <span>BUILD_ID=<strong id="diagnostic-build-id">載入中</strong></span>
+      <span>APP_JS_VERSION=<strong id="diagnostic-app-js-version">載入中</strong></span>
+      <span>SERVICE_WORKER_VERSION=<strong id="diagnostic-sw-version">檢查中</strong></span>
+    </div>
+    <div class="diagnostic-grid">
+      <span>SW_CONTROLLER=<strong id="diagnostic-sw-controller">檢查中</strong></span>
+      <span>API_BASE=<strong id="diagnostic-api-base">尚未載入</strong></span>
+      <span>REMEMBERED_ADMIN=<strong id="diagnostic-credential">檢查中</strong></span>
+      <span>LAST_REQUEST_STAGE=<strong id="diagnostic-stage">IDLE</strong></span>
+      <span>LAST_HTTP_STATUS=<strong id="diagnostic-http-status">—</strong></span>
+      <span>ERROR_CODE=<strong id="diagnostic-error-code">NONE</strong></span>
+      <span class="diagnostic-trace-row">STAGE_TRACE=<strong id="diagnostic-stage-trace">尚無請求</strong></span>
+    </div>
+  </footer>
+
   <script src="assets/lucide.min.js?v=0.468.0" defer></script>
-  <script src="app.js?v=20260925-1" defer></script>
+  <script src="app.js?v=20260925-2" defer></script>
 </body>
 </html>

@@ -601,6 +601,39 @@ legend,
   line-height: 1.55;
 }
 
+.build-diagnostics {
+  width: min(100% - 32px, 980px);
+  margin: 0 auto;
+  padding: 12px 0 20px;
+  border-top: 1px solid var(--line, #35404a);
+  color: var(--muted, #9aa6b2);
+  font-size: 11px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.diagnostic-build-line,
+.diagnostic-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.diagnostic-build-line {
+  margin-bottom: 4px;
+  color: var(--text, #eef2f5);
+}
+
+.diagnostic-grid strong,
+.diagnostic-build-line strong {
+  color: inherit;
+  font-weight: 600;
+}
+
+.diagnostic-trace-row {
+  flex-basis: 100%;
+}
+
 .status-message:empty {
   display: none;
 }

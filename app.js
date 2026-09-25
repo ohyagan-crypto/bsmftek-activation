@@ -1,5 +1,8 @@
 const CONFIG_URL = './activation-api.json';
 const STABLE_API_HOSTNAME = 'lbot1.lanxingapi.com';
+const BUILD_ID = '20260925-activation-diag-01';
+const APP_JS_VERSION = document.querySelector('meta[name="app-js-version"]')?.content || 'UNKNOWN';
+const BUILD_INFO_URL = './build-info.json';
 
 const generatorForm = document.querySelector('#generator-form');
 const generatorStatus = document.querySelector('#generator-status');
@@ -27,6 +30,16 @@ const sdTopupStatus = document.querySelector('#sd-topup-status');
 const sdTopupSubmit = document.querySelector('#sd-topup-submit');
 const imageQuotaUserList = document.querySelector('#image-quota-user-list');
 const imageQuotaStatus = document.querySelector('#image-quota-status');
+const diagnosticBuildId = document.querySelector('#diagnostic-build-id');
+const diagnosticAppJsVersion = document.querySelector('#diagnostic-app-js-version');
+const diagnosticSwVersion = document.querySelector('#diagnostic-sw-version');
+const diagnosticSwController = document.querySelector('#diagnostic-sw-controller');
+const diagnosticApiBase = document.querySelector('#diagnostic-api-base');
+const diagnosticCredential = document.querySelector('#diagnostic-credential');
+const diagnosticStage = document.querySelector('#diagnostic-stage');
+const diagnosticHttpStatus = document.querySelector('#diagnostic-http-status');
+const diagnosticErrorCode = document.querySelector('#diagnostic-error-code');
+const diagnosticStageTrace = document.querySelector('#diagnostic-stage-trace');
 
 const CREDENTIAL_DATABASE = 'bsmftek-activation';
 const CREDENTIAL_STORE = 'encrypted-settings';
@@ -38,6 +51,145 @@ const SD_CREDITS_PER_SECOND = 9;
 const SD_MIN_DURATION_SECONDS = 5;
 const SD_MAX_DURATION_SECONDS = 15;
 const MIN_SD_RECHARGE_TWD = 36;
+const stageTrace = [];
+let lastApiBaseUrl = '';
+
+class DiagnosticError extends Error {
+  constructor(code, message, status = '') {
+    super(message);
+    this.name = 'DiagnosticError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
+function updateDiagnostics() {
+  diagnosticBuildId.textContent = BUILD_ID;
+  diagnosticAppJsVersion.textContent = APP_JS_VERSION;
+  diagnosticApiBase.textContent = lastApiBaseUrl || '尚未載入';
+}
+
+function setDiagnosticStage(stage) {
+  stageTrace.push(stage);
+  if (stageTrace.length > 12) stageTrace.shift();
+  diagnosticStage.textContent = stage;
+  diagnosticStageTrace.textContent = stageTrace.join(' > ');
+}
+
+function setDiagnosticHttpStatus(status) {
+  diagnosticHttpStatus.textContent = status === '' ? '—' : String(status);
+}
+
+function setDiagnosticErrorCode(code) {
+  diagnosticErrorCode.textContent = code || 'NONE';
+}
+
+function newClientTraceId() {
+  return window.crypto?.randomUUID?.()
+    || `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function safeErrorMessage(error) {
+  const messages = {
+    E_CONFIG_FETCH: '無法連線取得授權服務設定',
+    E_CONFIG_HTTP: '授權服務設定暫時無法取得',
+    E_CONFIG_SCHEMA: '授權服務設定格式無效',
+    E_HEALTH_NETWORK: '無法連線至授權服務健康檢查',
+    E_HEALTH_HTTP: '授權服務健康檢查回應失敗',
+    E_HEALTH_SCHEMA: '授權服務健康檢查格式無效',
+    E_HEALTH_SERVICE: '健康檢查回報的服務身分不符',
+    E_PAIRING_PREFLIGHT: '瀏覽器的授權 API 預檢未通過',
+    E_PAIRING_NETWORK: '瀏覽器未取得授權 API 回應；請依 trace ID 核對 OPTIONS 與 POST 紀錄',
+    E_PAIRING_HTTP_401: '管理密碼驗證失敗',
+    E_PAIRING_HTTP_403: '管理密碼驗證失敗或來源未授權',
+    E_PAIRING_HTTP_404: '授權碼 API 路徑不存在',
+    E_PAIRING_HTTP_5XX: '授權服務發生伺服器錯誤',
+    E_PAIRING_HTTP_OTHER: '授權碼 API 回應失敗',
+    E_PAIRING_INVALID_RESPONSE: '授權服務回應格式無效',
+    E_FRONTEND_EXCEPTION: '網站前端發生未預期錯誤'
+  };
+  const code = error instanceof DiagnosticError ? error.code : 'E_FRONTEND_EXCEPTION';
+  return { code, message: messages[code] || messages.E_FRONTEND_EXCEPTION };
+}
+
+function renderDiagnosticFailure(error) {
+  const { code, message } = safeErrorMessage(error);
+  setDiagnosticErrorCode(code);
+  const status = error instanceof DiagnosticError ? error.status : '';
+  if (status !== '') setDiagnosticHttpStatus(status);
+  setStatus(`${message}（錯誤代碼：${code}）`, 'error');
+}
+
+function workerVersion(worker) {
+  if (!worker) return Promise.resolve('NO_ACTIVE_WORKER');
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    const timeout = window.setTimeout(() => {
+      channel.port1.close();
+      resolve('VERSION_UNAVAILABLE');
+    }, 1200);
+    channel.port1.onmessage = (event) => {
+      window.clearTimeout(timeout);
+      channel.port1.close();
+      resolve(String(event.data?.version || 'VERSION_UNAVAILABLE'));
+    };
+    worker.postMessage({ type: 'GET_VERSION' }, [channel.port2]);
+  });
+}
+
+async function refreshServiceWorkerDiagnostics() {
+  if (!('serviceWorker' in navigator)) {
+    diagnosticSwController.textContent = 'NO';
+    diagnosticSwVersion.textContent = 'UNSUPPORTED';
+    return;
+  }
+  const registration = await navigator.serviceWorker.getRegistration().catch(() => null);
+  if (registration) await registration.update().catch(() => {});
+  const controller = navigator.serviceWorker.controller;
+  diagnosticSwController.textContent = controller ? 'YES' : 'NO';
+  diagnosticSwVersion.textContent = await workerVersion(controller || registration?.active);
+}
+
+async function checkForNewBuild() {
+  try {
+    const response = await fetch(`${BUILD_INFO_URL}?time=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) return;
+    const latest = await response.json();
+    if (!latest?.buildId || latest.buildId === BUILD_ID) {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('build')) {
+        url.searchParams.delete('build');
+        window.history.replaceState(null, '', url);
+      }
+      return;
+    }
+    const reloadKey = `activation-build-reload:${window.location.pathname}`;
+    if (window.sessionStorage.getItem(reloadKey) === latest.buildId) return;
+    window.sessionStorage.setItem(reloadKey, latest.buildId);
+    const url = new URL(window.location.href);
+    url.searchParams.set('build', latest.buildId);
+    window.location.replace(url);
+  } catch (_) {
+    // Build discovery is advisory; API diagnostics provide the failure detail.
+  }
+}
+
+window.addEventListener('error', (event) => {
+  if (event instanceof ErrorEvent) setDiagnosticErrorCode('E_FRONTEND_EXCEPTION');
+});
+window.addEventListener('unhandledrejection', () => setDiagnosticErrorCode('E_FRONTEND_EXCEPTION'));
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', refreshServiceWorkerDiagnostics);
+}
+updateDiagnostics();
+checkForNewBuild();
+refreshServiceWorkerDiagnostics().catch(() => {
+  diagnosticSwController.textContent = 'NO';
+  diagnosticSwVersion.textContent = 'VERSION_UNAVAILABLE';
+});
 
 function updateSdCreditPreview() {
   const amount = Math.max(0, Number(sdCredits.value || 0));
@@ -180,46 +332,86 @@ async function loadRememberedAdminKey() {
 async function restoreRememberedAdminKey() {
   try {
     const savedAdminKey = await loadRememberedAdminKey();
-    if (!savedAdminKey) return;
+    if (!savedAdminKey) {
+      diagnosticCredential.textContent = 'NOT_FOUND';
+      return;
+    }
     adminKeyInput.value = savedAdminKey;
     rememberAdminKey.checked = true;
     forgetAdminKey.hidden = false;
+    diagnosticCredential.textContent = 'RESTORED';
   } catch (_) {
     forgetAdminKey.hidden = true;
+    diagnosticCredential.textContent = 'UNAVAILABLE';
   }
 }
 
 async function resolveApiBaseUrl() {
-  const response = await fetch(`${CONFIG_URL}?time=${Date.now()}`, {
-    cache: 'no-store',
-    headers: { Accept: 'application/json' }
-  });
-  if (!response.ok) throw new Error('無法取得最新授權服務設定，請重新整理後再試。');
-
-  const config = await response.json();
-  const endpoint = new URL(String(config.apiBaseUrl || ''));
+  setDiagnosticStage('STAGE_2_CONFIG_START');
+  let response;
+  try {
+    response = await fetch(`${CONFIG_URL}?time=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' }
+    });
+  } catch (_) {
+    throw new DiagnosticError('E_CONFIG_FETCH', 'config fetch failed');
+  }
+  if (!response.ok) throw new DiagnosticError('E_CONFIG_HTTP', 'config http failed', response.status);
+  let config;
+  try {
+    config = await response.json();
+  } catch (_) {
+    throw new DiagnosticError('E_CONFIG_SCHEMA', 'config response is not JSON', response.status);
+  }
+  let endpoint;
+  try {
+    endpoint = new URL(String(config.apiBaseUrl || ''));
+  } catch (_) {
+    throw new DiagnosticError('E_CONFIG_SCHEMA', 'config endpoint is invalid', response.status);
+  }
   const isQuickTunnel = endpoint.hostname.endsWith('.trycloudflare.com');
   const isStableTunnel = endpoint.hostname === STABLE_API_HOSTNAME;
-  if (endpoint.protocol !== 'https:' || (!isQuickTunnel && !isStableTunnel)) {
-    throw new Error('授權服務設定無效，請稍後再試。');
+  const isLocalTest = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    && ['localhost', '127.0.0.1'].includes(endpoint.hostname)
+    && endpoint.protocol === 'http:';
+  if ((!isLocalTest && endpoint.protocol !== 'https:') || (!isQuickTunnel && !isStableTunnel && !isLocalTest)) {
+    throw new DiagnosticError('E_CONFIG_SCHEMA', 'config endpoint is not allowed', response.status);
   }
+  lastApiBaseUrl = endpoint.origin;
+  diagnosticApiBase.textContent = endpoint.origin;
+  setDiagnosticStage('STAGE_2_CONFIG_READY');
   return endpoint.origin;
 }
 
 async function verifyApiBaseUrl(apiBaseUrl) {
+  setDiagnosticStage('STAGE_3_HEALTH_START');
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 8000);
   try {
-    const response = await fetch(`${apiBaseUrl}/health`, {
-      cache: 'no-store',
-      headers: { Accept: 'application/json' },
-      signal: controller.signal
-    });
-    if (!response.ok) throw new Error('授權服務目前無法連線。');
-    const result = await response.json();
-    if (result.status !== 'ok' || !['line-bsmftek-relay', 'lbot1-clean-production-v2'].includes(result.service)) {
-      throw new Error('授權服務目前無法連線。');
+    let response;
+    try {
+      response = await fetch(`${apiBaseUrl}/health`, {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+        signal: controller.signal
+      });
+    } catch (_) {
+      throw new DiagnosticError('E_HEALTH_NETWORK', 'health fetch failed');
     }
+    setDiagnosticHttpStatus(response.status);
+    if (!response.ok) throw new DiagnosticError('E_HEALTH_HTTP', 'health http failed', response.status);
+    let result;
+    try {
+      result = await response.json();
+    } catch (_) {
+      throw new DiagnosticError('E_HEALTH_SCHEMA', 'health response is not JSON', response.status);
+    }
+    if (!result || result.status !== 'ok') throw new DiagnosticError('E_HEALTH_SCHEMA', 'health schema invalid', response.status);
+    if (!['line-bsmftek-relay', 'lbot1-clean-production-v2'].includes(result.service)) {
+      throw new DiagnosticError('E_HEALTH_SERVICE', 'health service identity invalid', response.status);
+    }
+    setDiagnosticStage('STAGE_4_HEALTH_OK');
   } finally {
     window.clearTimeout(timeout);
   }
@@ -232,12 +424,29 @@ async function resolveHealthyApiBaseUrl() {
       const apiBaseUrl = await resolveApiBaseUrl();
       await verifyApiBaseUrl(apiBaseUrl);
       return apiBaseUrl;
-    } catch (error) {
+  } catch (error) {
       lastError = error;
       if (attempt === 0) await new Promise((resolve) => window.setTimeout(resolve, 1200));
     }
   }
   throw lastError || new Error('授權服務目前無法連線。');
+}
+
+async function verifyPairingPreflight(apiBaseUrl, clientTraceId) {
+  setDiagnosticStage('STAGE_4A_PAIRING_PREFLIGHT_START');
+  let response;
+  try {
+    response = await fetch(`${apiBaseUrl}/api/admin/pairing-code?trace=${encodeURIComponent(clientTraceId)}`, {
+      method: 'OPTIONS',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' }
+    });
+  } catch (_) {
+    throw new DiagnosticError('E_PAIRING_PREFLIGHT', 'pairing OPTIONS probe failed');
+  }
+  setDiagnosticHttpStatus(response.status);
+  if (!response.ok) throw new DiagnosticError('E_PAIRING_PREFLIGHT', 'pairing OPTIONS probe was rejected', response.status);
+  setDiagnosticStage('STAGE_4A_PAIRING_PREFLIGHT_OK');
 }
 
 function setPairingStatusMessage(message, type = '') {
@@ -603,6 +812,7 @@ forgetAdminKey.addEventListener('click', async () => {
   adminKeyInput.value = '';
   rememberAdminKey.checked = false;
   forgetAdminKey.hidden = true;
+  diagnosticCredential.textContent = 'CLEARED';
   setStatus('已清除這台裝置記住的管理密碼。', 'success');
   adminKeyInput.focus();
 });
@@ -647,24 +857,54 @@ generatorForm.addEventListener('submit', async (event) => {
 
   const submitButton = generatorForm.querySelector('button[type="submit"]');
   submitButton.disabled = true;
+  stageTrace.length = 0;
+  setDiagnosticHttpStatus('');
+  setDiagnosticErrorCode('NONE');
+  const clientTraceId = newClientTraceId();
+  setDiagnosticStage('STAGE_1_BUTTON_CLICK');
   setStatus('正在建立授權碼...', 'working');
 
   try {
     const apiBaseUrl = await resolveHealthyApiBaseUrl();
-    const response = await fetch(`${apiBaseUrl}/api/admin/pairing-code`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Key': adminKey
-      },
-      body: JSON.stringify({ accessDays, label, featureAccess })
-    });
+    await verifyPairingPreflight(apiBaseUrl, clientTraceId);
+    setDiagnosticStage('STAGE_5_PAIRING_POST_START');
+    let response;
+    try {
+      response = await fetch(`${apiBaseUrl}/api/admin/pairing-code?trace=${encodeURIComponent(clientTraceId)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Key': adminKey
+        },
+        body: JSON.stringify({ accessDays, label, featureAccess, clientTraceId }),
+        cache: 'no-store'
+      });
+    } catch (_) {
+      throw new DiagnosticError('E_PAIRING_NETWORK', 'pairing POST fetch failed');
+    }
+    setDiagnosticHttpStatus(response.status);
+    setDiagnosticStage(`STAGE_6_PAIRING_HTTP_STATUS_${response.status}`);
+    if (!response.ok) {
+      const code = response.status === 401 ? 'E_PAIRING_HTTP_401'
+        : response.status === 403 ? 'E_PAIRING_HTTP_403'
+          : response.status === 404 ? 'E_PAIRING_HTTP_404'
+            : response.status >= 500 ? 'E_PAIRING_HTTP_5XX'
+              : 'E_PAIRING_HTTP_OTHER';
+      throw new DiagnosticError(code, 'pairing API returned an error', response.status);
+    }
     const contentType = response.headers.get('content-type') || '';
-    const result = contentType.includes('application/json')
-      ? await response.json()
-      : { ok: false, error: '授權服務回應格式錯誤。' };
-
-    if (!response.ok || !result.ok) throw new Error(result.error || '無法產生授權碼。');
+    let result;
+    try {
+      if (!contentType.includes('application/json')) throw new Error('invalid-content-type');
+      result = await response.json();
+    } catch (_) {
+      throw new DiagnosticError('E_PAIRING_INVALID_RESPONSE', 'pairing response is not valid JSON', response.status);
+    }
+    if (!result || result.ok !== true || typeof result.code !== 'string' || !result.code.trim()
+      || !Number.isInteger(Number(result.accessDays))) {
+      throw new DiagnosticError('E_PAIRING_INVALID_RESPONSE', 'pairing response schema is invalid', response.status);
+    }
+    setDiagnosticStage('STAGE_7_PAIRING_JSON_OK');
     generatedCode.querySelector('strong').textContent = result.code;
     const granted = [];
     if (result.featureAccess?.wbs) granted.push('WBS');
@@ -678,8 +918,10 @@ generatorForm.addEventListener('submit', async (event) => {
         await saveRememberedAdminKey(adminKey);
         credentialSaved = true;
         forgetAdminKey.hidden = false;
+        diagnosticCredential.textContent = 'RESTORED';
       } catch (_) {
         credentialSaved = false;
+        diagnosticCredential.textContent = 'SAVE_FAILED';
       }
     } else {
       try {
@@ -689,6 +931,7 @@ generatorForm.addEventListener('submit', async (event) => {
       }
       adminKeyInput.value = '';
       forgetAdminKey.hidden = true;
+      diagnosticCredential.textContent = 'CLEARED';
     }
     setStatus(
       rememberAdminKey.checked && !credentialSaved
@@ -696,13 +939,10 @@ generatorForm.addEventListener('submit', async (event) => {
         : `授權碼已建立${credentialSaved ? '，管理密碼已記住' : ''}，請私下提供給指定客戶。`,
       'success'
     );
+    setDiagnosticStage('STAGE_8_UI_RENDER_SUCCESS');
     renderIcons();
   } catch (error) {
-    const message = String(error.message || '');
-    const knownMessage = /管理密碼|授權服務|授權碼|最新|SD|儲值|積分/.test(message)
-      ? message
-      : '授權服務連線失敗，請重新整理後再試。';
-    setStatus(knownMessage, 'error');
+    renderDiagnosticFailure(error);
   } finally {
     submitButton.disabled = false;
   }
