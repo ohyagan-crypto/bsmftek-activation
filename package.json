@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "test:activation-deployment-gate": "node tests/activation-deployment-gate.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.61.1"
+  }
+}
